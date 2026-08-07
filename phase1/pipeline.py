@@ -190,29 +190,57 @@ def scanner_grids(span, p_min, sigma_min, sigma_factor=2.0, f_oversample=2.0):
     return grids
 
 
-def scan_scanner(t, win, span, p_min, sigma_min, paired=False,
-                 tau_grid=None, t0_step_frac=0.5):
-    """M2 (paired=False) / M3 (paired=True) grid scan. Returns (ll, argmax).
-    t0 grid: step = t0_step_frac * sigma over [0, T)."""
+def _scan_periods(args):
+    """Worker: scan one chunk of periods. Top-level for pickling."""
+    (t, a, b, periods, sigma_min, paired, tau_grid, t0_step_frac,
+     tref) = args
+    win = (a, b)
     best, arg = -np.inf, None
+    for T in periods:
+        sig = sigma_min
+        while sig <= 0.5 * T:
+            taus = [None]
+            if paired:
+                taus = [x for x in tau_grid if x <= T / 2.0]
+                if not taus:
+                    break
+            for tau in taus:
+                iv = scanner_intervals(T, sig, tau)
+                t0s = np.arange(0.0, T, t0_step_frac * sig)
+                ll = scan_phases(t, win, T, iv, t0s, tref)
+                i = int(np.argmax(ll))
+                if ll[i] > best:
+                    best, arg = float(ll[i]), (T, sig, tau, t0s[i])
+            sig *= 2.0
+    return best, arg
+
+
+def scan_scanner(t, win, span, p_min, sigma_min, paired=False,
+                 tau_grid=None, t0_step_frac=0.5, processes=1):
+    """M2 (paired=False) / M3 (paired=True) grid scan. Returns (ll, argmax).
+    t0 grid: step = t0_step_frac * sigma over [0, T).
+    processes > 1 splits the period list across a process pool (used by the
+    full-scale confirmatory scans; per-simulation parallelism in the
+    acceptance harness keeps this at 1 there)."""
     tref = float(win[0][0])
-    for periods in scanner_grids(span, p_min, sigma_min):
-        for T in periods:
-            sig = sigma_min
-            while sig <= 0.5 * T:
-                taus = [None]
-                if paired:
-                    taus = [x for x in tau_grid if x <= T / 2.0]
-                    if not taus:
-                        break
-                for tau in taus:
-                    iv = scanner_intervals(T, sig, tau)
-                    t0s = np.arange(0.0, T, t0_step_frac * sig)
-                    ll = scan_phases(t, win, T, iv, t0s, tref)
-                    i = int(np.argmax(ll))
-                    if ll[i] > best:
-                        best, arg = float(ll[i]), (T, sig, tau, t0s[i])
-                sig *= 2.0
+    periods = np.concatenate(
+        scanner_grids(span, p_min, sigma_min) or [np.empty(0)])
+    if len(periods) == 0:
+        return m0_ll(t, win), None
+    chunks = np.array_split(periods, max(1, min(processes * 4,
+                                                len(periods))))
+    jobs = [(t, win[0], win[1], c, sigma_min, paired, tau_grid,
+             t0_step_frac, tref) for c in chunks if len(c)]
+    if processes > 1:
+        from concurrent.futures import ProcessPoolExecutor
+        with ProcessPoolExecutor(max_workers=processes) as ex:
+            results = list(ex.map(_scan_periods, jobs))
+    else:
+        results = [_scan_periods(j) for j in jobs]
+    best, arg = -np.inf, None
+    for ll, a in results:
+        if ll > best:
+            best, arg = ll, a
     return best, arg
 
 
@@ -301,7 +329,7 @@ def m5_fit(t, win):
 
 # --------------------------------------------------------------- statistic
 
-def lambda_stat(t, win, p_min, sigma_min, tau_grid, m1_kw=None):
+def lambda_stat(t, win, p_min, sigma_min, tau_grid, m1_kw=None, processes=1):
     """The frozen primary statistic (prereg_h1 Section 6.1) for one
     source-campaign. Returns (Lambda, details)."""
     t = np.sort(np.asarray(t, float))
@@ -310,9 +338,10 @@ def lambda_stat(t, win, p_min, sigma_min, tau_grid, m1_kw=None):
     ll1, arg1 = m1_scan(t, win, span, p_min, **(m1_kw or {}))
     ll4 = m4_fit(t, win)
     ll5 = m5_fit(t, win)
-    ll2, arg2 = scan_scanner(t, win, span, p_min, sigma_min, paired=False)
+    ll2, arg2 = scan_scanner(t, win, span, p_min, sigma_min, paired=False,
+                             processes=processes)
     ll3, arg3 = scan_scanner(t, win, span, p_min, sigma_min, paired=True,
-                             tau_grid=tau_grid)
+                             tau_grid=tau_grid, processes=processes)
     nat = max(ll0, ll1, ll4, ll5)
     lam = 2.0 * (max(ll2, ll3) - nat)
     return lam, {"ll": (ll0, ll1, ll2, ll3, ll4, ll5),

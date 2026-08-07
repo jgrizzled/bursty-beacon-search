@@ -1,6 +1,13 @@
 """Synthetic acceptance tests for the H1 pipeline (prereg_h1.md Section 9).
 
-Run:  .venv/bin/python phase1/acceptance.py [--scale test|full]
+Run:  uv run python phase1/acceptance.py [--scale test|full] [--workers N]
+
+Parallelism: simulations and injections fan out over a process pool
+(default: cores-1). Every task draws its own deterministic generator,
+np.random.default_rng([42, test-id, family-id, index]), so results are
+reproducible and independent of worker count or scheduling order. (This
+changed the random streams relative to the pre-parallel harness; the seeded
+results differ from the earlier committed JSON but test the same criteria.)
 
 --scale test (default): reduced grids and simulation counts for pipeline
 validation on a laptop. Results at this scale are SMOKE VALIDATION ONLY and
@@ -60,23 +67,39 @@ def lam_of(t, win, cfg):
     return lam, det
 
 
-def t1_null_uniformity(win, cfg, n_sims, rng):
+def _sim_family(rng, win, name):
+    """Draw one synthetic stream for a null family. Deterministic given rng."""
+    lam0 = SEPOCT_RATE
+    if name == "M0":
+        return pl.sim_m0(rng, win, lam0)
+    if name == "M1":
+        return pl.sim_periodic(rng, win, 5.0, win[0][0] + 1.0,
+                               [(0.0, 2.0)], lam0 * 2.0, lam0 * 0.2)
+    if name == "M4":
+        return pl.sim_m4(rng, win, 0.5, lam0)
+    return pl.sim_m5(rng, win, 1.0, lam0)
+
+
+def _t1_task(args):
+    """Worker: one null simulation -> Lambda. Seeded per (family, index)."""
+    name, i, a, b, cfg = args
+    rng = np.random.default_rng([42, 1, {"M0": 0, "M1": 1, "M4": 4,
+                                         "M5": 5}[name], i])
+    win = (a, b)
+    t = _sim_family(rng, win, name)
+    return name, lam_of(t, win, cfg)[0]
+
+
+def t1_null_uniformity(win, cfg, n_sims, pool):
     """Λ under each natural null; split-half rank uniformity."""
     out = {}
-    lam0 = SEPOCT_RATE
-    sims = {
-        "M0": lambda: pl.sim_m0(rng, win, lam0),
-        "M1": lambda: pl.sim_periodic(rng, win, 5.0, win[0][0] + 1.0,
-                                      [(0.0, 2.0)], lam0 * 2.0, lam0 * 0.2),
-        "M4": lambda: pl.sim_m4(rng, win, 0.5, lam0),
-        "M5": lambda: pl.sim_m5(rng, win, 1.0, lam0),
-    }
-    for name, gen in sims.items():
-        lams = []
-        for _ in range(n_sims):
-            t = gen()
-            lams.append(lam_of(t, win, cfg)[0])
-        lams = np.array(lams)
+    jobs = [(name, i, win[0], win[1], cfg)
+            for name in ("M0", "M1", "M4", "M5") for i in range(n_sims)]
+    results = {}
+    for name, lam in pool.map(_t1_task, jobs, chunksize=4):
+        results.setdefault(name, []).append(lam)
+    for name in ("M0", "M1", "M4", "M5"):
+        lams = np.array(results[name])
         half = n_sims // 2
         ref, test_half = lams[:half], lams[half:]
         # p-value of each test sim against the reference distribution
@@ -114,23 +137,36 @@ def _recovered(t, win, T_true, tau_true, best, cfg):
     return bool(jac >= 0.9 and e_hat <= 2.0 * max(e_true, 1e-12))
 
 
-def t2_recovery(win, cfg, n_inj, rng):
-    """Injected M2/M3 recovered within one grid step."""
-    lam0 = SEPOCT_RATE
+def _t2_task(args):
+    """Worker: one scanner injection -> recovery verdict (None if the
+    injection drew < 25 in-visit events). Seeded per (model, index, jitter)."""
+    model, i, a, b, cfg, jitter_s = args
+    rng = np.random.default_rng([42, 2, {"M2": 2, "M3": 3}[model], i,
+                                 int(jitter_s)])
+    win = (a, b)
+    T_true = float(rng.uniform(1.5, 4.0))
+    tau_true = 0.15 if model == "M3" else None
+    iv = pl.scanner_intervals(T_true, 0.2, tau_true)
+    t = pl.sim_periodic(rng, win, T_true, win[0][0] + 0.3, iv,
+                        SEPOCT_RATE * 6.0, SEPOCT_RATE * 0.02)
+    n_in, _ = pl.counts_in(t, T_true, win[0][0] + 0.3, iv)
+    if n_in < 25:
+        return model, None
+    if jitter_s:
+        t = np.sort(t + rng.normal(0.0, jitter_s / pl.DAY_S, len(t)))
+    _, det = lam_of(t, win, cfg)
+    best = det["m3"] if (det["ll"][3] >= det["ll"][2]) else det["m2"]
+    return model, _recovered(t, win, T_true, tau_true, best, cfg)
+
+
+def t2_recovery(win, cfg, n_inj, pool):
+    """Injected M2/M3 recovered (exact frequency or degenerate-equivalent)."""
+    jobs = [(m, i, win[0], win[1], cfg, 0.0)
+            for m in ("M2", "M3") for i in range(n_inj)]
     res = {"M2": [], "M3": []}
-    for model in ("M2", "M3"):
-        for _ in range(n_inj):
-            T_true = float(rng.uniform(1.5, 4.0))
-            tau_true = 0.15 if model == "M3" else None
-            iv = pl.scanner_intervals(T_true, 0.2, tau_true)
-            t = pl.sim_periodic(rng, win, T_true, win[0][0] + 0.3, iv,
-                                lam0 * 6.0, lam0 * 0.02)
-            n_in, _ = pl.counts_in(t, T_true, win[0][0] + 0.3, iv)
-            if n_in < 25:
-                continue
-            _, det = lam_of(t, win, cfg)
-            best = det["m3"] if (det["ll"][3] >= det["ll"][2]) else det["m2"]
-            res[model].append(_recovered(t, win, T_true, tau_true, best, cfg))
+    for model, ok in pool.map(_t2_task, jobs, chunksize=2):
+        if ok is not None:
+            res[model].append(ok)
     return {m: {"n_valid": len(v), "recovered": int(np.sum(v)),
                 "frac": float(np.mean(v)) if v else None,
                 "pass": bool(v and np.mean(v) >= 0.9)}
@@ -190,52 +226,50 @@ def t4_controls(cfg):
     return out
 
 
-def t5_jitter(win, cfg, n_inj, rng):
+def t5_jitter(win, cfg, n_inj, pool):
     """Recovery stability under 10-s timing jitter."""
-    lam0 = SEPOCT_RATE
-    ok = []
-    for _ in range(n_inj):
-        T_true = float(rng.uniform(1.5, 4.0))
-        iv = pl.scanner_intervals(T_true, 0.2, None)
-        t = pl.sim_periodic(rng, win, T_true, win[0][0] + 0.3, iv,
-                            lam0 * 6.0, lam0 * 0.02)
-        n_in, _ = pl.counts_in(t, T_true, win[0][0] + 0.3, iv)
-        if n_in < 25:
-            continue
-        t = np.sort(t + rng.normal(0.0, 10.0 / pl.DAY_S, len(t)))
-        _, det = lam_of(t, win, cfg)
-        best = det["m3"] if (det["ll"][3] >= det["ll"][2]) else det["m2"]
-        ok.append(_recovered(t, win, T_true, None, best, cfg))
+    jobs = [("M2", i, win[0], win[1], cfg, 10.0) for i in range(n_inj)]
+    ok = [r for _, r in pool.map(_t2_task, jobs, chunksize=2)
+          if r is not None]
     return {"n_valid": len(ok), "recovered": int(np.sum(ok)),
             "pass": bool(ok and np.mean(ok) >= 0.9)}
 
 
 def main():
+    import os
+    from concurrent.futures import ProcessPoolExecutor
     ap = argparse.ArgumentParser()
     ap.add_argument("--scale", choices=["test", "full"], default="test")
     ap.add_argument("--n-sims", type=int, default=None)
+    ap.add_argument("--n-inj", type=int, default=None)
+    ap.add_argument("--workers", type=int, default=max(1,
+                    (os.cpu_count() or 2) - 1))
     args = ap.parse_args()
     cfg = TEST if args.scale == "test" else FULL
     n_sims = args.n_sims or (60 if args.scale == "test" else 1000)
-    n_inj = 20 if args.scale == "test" else 200
-    rng = np.random.default_rng(42)
+    n_inj = args.n_inj or (20 if args.scale == "test" else 200)
     win = load_sepoct_windows()
     t0 = time.time()
     results = {"scale": args.scale,
                "smoke_only": args.scale == "test",
+               "workers": args.workers,
+               "seeding": "per-task default_rng([42, test, family, index])",
                "config": {k: (list(v) if isinstance(v, list) else v)
                           for k, v in cfg.items() if k != "m1_kw"},
                "n_sims_per_family": n_sims, "n_injections": n_inj}
-    print(f"[t3] alias flagging ...")
-    results["t3_alias"] = t3_alias(win)
-    print(f"[t4] positive controls ...")
-    results["t4_controls"] = t4_controls(cfg)
-    print(f"[t2] scanner recovery ({n_inj} injections x2) ...")
-    results["t2_recovery"] = t2_recovery(win, cfg, n_inj, rng)
-    print(f"[t5] jitter stability ...")
-    results["t5_jitter"] = t5_jitter(win, cfg, n_inj, rng)
-    print(f"[t1] null uniformity ({n_sims} sims x 4 families) ...")
-    results["t1_null_uniformity"] = t1_null_uniformity(win, cfg, n_sims, rng)
+    with ProcessPoolExecutor(max_workers=args.workers) as pool:
+        print("[t3] alias flagging ...")
+        results["t3_alias"] = t3_alias(win)
+        print("[t4] positive controls ...")
+        results["t4_controls"] = t4_controls(cfg)
+        print(f"[t2] scanner recovery ({n_inj} injections x2, "
+              f"{args.workers} workers) ...")
+        results["t2_recovery"] = t2_recovery(win, cfg, n_inj, pool)
+        print("[t5] jitter stability ...")
+        results["t5_jitter"] = t5_jitter(win, cfg, n_inj, pool)
+        print(f"[t1] null uniformity ({n_sims} sims x 4 families) ...")
+        results["t1_null_uniformity"] = t1_null_uniformity(win, cfg, n_sims,
+                                                           pool)
     results["runtime_s"] = round(time.time() - t0, 1)
     out = ROOT / "phase1" / f"acceptance_results_{args.scale}.json"
     with open(out, "w") as f:

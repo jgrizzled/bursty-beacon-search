@@ -1,6 +1,8 @@
 {
   "scale": "test",
   "smoke_only": true,
+  "workers": 9,
+  "seeding": "per-task default_rng([42, test, family, index])",
   "config": {
     "p_min": 1.0,
     "sigma_min": 0.1,
@@ -16,8 +18,7 @@
     "sidereal_flagged": true,
     "solar_x2_flagged": true,
     "off_alias_unflagged": true,
-    "pass": true,
-    "note": "control frequency corrected to 0.15/d; prior 0.422/d sits inside the legitimate short-window alias blanket"
+    "pass": true
   },
   "t4_controls": {
     "FRB20180916B": {
@@ -35,9 +36,9 @@
   },
   "t2_recovery": {
     "M2": {
-      "n_valid": 18,
-      "recovered": 17,
-      "frac": 0.9444444444444444,
+      "n_valid": 15,
+      "recovered": 14,
+      "frac": 0.9333333333333333,
       "pass": true
     },
     "M3": {
@@ -48,35 +49,35 @@
     }
   },
   "t5_jitter": {
-    "n_valid": 16,
-    "recovered": 16,
+    "n_valid": 17,
+    "recovered": 17,
     "pass": true
   },
   "t1_null_uniformity": {
     "M0": {
-      "ks_p": 0.29448551965774616,
+      "ks_p": 0.032099080545932024,
       "n": 60,
-      "lam_median": 3.9396457649218064,
+      "lam_median": 4.012137188496126,
       "pass": true
     },
     "M1": {
-      "ks_p": 0.21020404372608692,
+      "ks_p": 0.7612643121814104,
       "n": 60,
-      "lam_median": 32.943085442215306,
+      "lam_median": 33.179033555364185,
       "pass": true
     },
     "M4": {
-      "ks_p": 0.6031312664644285,
+      "ks_p": 0.11012703325416162,
       "n": 60,
-      "lam_median": -1147.6552372626238,
+      "lam_median": -1157.4774227661055,
       "pass": true
     },
     "M5": {
-      "ks_p": 0.2437748504595002,
+      "ks_p": 0.29448551965774616,
       "n": 60,
-      "lam_median": -256.6631493084478,
+      "lam_median": -212.83901690980747,
       "pass": true
     }
   },
-  "runtime_s": 1776.9
+  "runtime_s": 275.5
 }

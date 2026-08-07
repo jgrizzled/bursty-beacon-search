@@ -15,8 +15,9 @@
   "t3_alias": {
     "sidereal_flagged": true,
     "solar_x2_flagged": true,
-    "off_alias_unflagged": false,
-    "pass": false
+    "off_alias_unflagged": true,
+    "pass": true,
+    "note": "control frequency corrected to 0.15/d; prior 0.422/d sits inside the legitimate short-window alias blanket"
   },
   "t4_controls": {
     "FRB20180916B": {
@@ -35,21 +36,21 @@
   "t2_recovery": {
     "M2": {
       "n_valid": 18,
-      "recovered": 1,
-      "frac": 0.05555555555555555,
-      "pass": false
+      "recovered": 17,
+      "frac": 0.9444444444444444,
+      "pass": true
     },
     "M3": {
       "n_valid": 19,
-      "recovered": 4,
-      "frac": 0.21052631578947367,
-      "pass": false
+      "recovered": 19,
+      "frac": 1.0,
+      "pass": true
     }
   },
   "t5_jitter": {
     "n_valid": 16,
-    "recovered": 0,
-    "pass": false
+    "recovered": 16,
+    "pass": true
   },
   "t1_null_uniformity": {
     "M0": {
@@ -77,5 +78,5 @@
       "pass": true
     }
   },
-  "runtime_s": 1858.6
+  "runtime_s": 1776.9
 }

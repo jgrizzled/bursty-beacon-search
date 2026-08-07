@@ -141,7 +141,7 @@ def t3_alias(win):
     span = float(win[1][-1] - win[0][0])
     sid = pl.alias_flag(pl.F_SIDEREAL, win, span)
     sol2 = pl.alias_flag(2 * pl.F_SOLAR, win, span)
-    off = pl.alias_flag(1.0 / 2.37, win, span)  # non-rational control
+    off = pl.alias_flag(0.15, win, span)  # P=6.67 d: in a genuine gap (>2/span from all day-rationals)
     return {"sidereal_flagged": bool(sid), "solar_x2_flagged": bool(sol2),
             "off_alias_unflagged": bool(not off),
             "pass": bool(sid and sol2 and not off)}

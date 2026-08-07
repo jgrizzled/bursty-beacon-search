@@ -150,6 +150,8 @@ For each source–campaign, compute the normalized spectral window |W̃(f)|² = 
 
 A likelihood peak within 2/T_span of any alias-set frequency is reported **alias-contaminated**: it appears in the ranked list but cannot become a confirmatory candidate without data from an instrument or campaign with a materially different window function. The alias set is computed and committed before the first scan of real data.
 
+_Property noted during acceptance testing (2026-08-07): for short-baseline campaigns the 2/T_span tolerance makes the day-rational alias set blanket much of the multi-day frequency range (e.g. the 22-day FAST 20201124A campaign flags nearly everything between ~2 d and ~4 d periods). This is the rule operating as designed — short windows genuinely cannot exclude day-commensurate aliases — and it means alias-clear discovery space comes primarily from the long-baseline campaigns (FAST 20240114A: tolerance ≈ 0.003 d⁻¹) and from cross-campaign confirmation between instruments._
+
 ## 6. Primary statistic and significance procedure
 
 ### 6.1 Primary statistic

@@ -91,6 +91,37 @@ Live-web verification of all candidates was performed by parallel research passe
 
 _Verification note: five source–campaign pairs are verified (1.1b, 1.2a, 1.2c, 1.3, 1.5), so the freeze-pause condition of prereg_h1 Section 3.2 is not triggered. All sample decisions are resolved; what remains for freeze is mechanical (downloads, checksums, extraction scripts, software pinning)._
 
+### 1.6 Frozen files and checksums (downloaded and verified 2026-08-07)
+
+All files below are stored under `data/raw/` (gitignored; re-fetchable from the recorded URLs) and were verified against publisher-side checksums where the repository publishes them (Zenodo MD5, ScienceDB MD5 — all matched). Session logs extracted from these inputs live in `phase1/windows/` with `PROVENANCE.json` recording input/output SHA-256 pairs, produced by the frozen script `scripts/extract_session_logs.py`.
+
+| Campaign | File | Size (B) | SHA-256 | Source verification |
+| --- | --- | --- | --- | --- |
+| Nançay 20220912A | `Observation times.txt` | 38,430 | `b2c258e1…86df02b43`* | Zenodo MD5 `0ee30dce…` matched |
+| Nançay 20220912A | `NRT_full_burst_information.csv` | 10,415,063 | `42554557…bed34d7e` | Zenodo MD5 `fa907570…` matched |
+| Nançay 20220912A | `Supplementary Material (online).csv` | 34,405 | `8f2a6e5b…6b93a72` | Zenodo MD5 `6c762d54…` matched |
+| Nançay 20220912A | `NRT_bursts_with_corrected_drift.csv` | 84,469 | `205dcb67…a9a4a7db` | Zenodo MD5 `ae602879…` matched |
+| AstroFlash 20220912A | `r117_camp_reduced.csv` | — | `a5f406af…651e149b` | GitHub `main`; archived in Zenodo repo-zip MD5 `03141af2…` |
+| AstroFlash 20220912A | `r117_fullcampaign.csv` | — | `86ead8bc…9bec9640` | ditto |
+| AstroFlash 20220912A | `FRB20220912A_table_paper.csv` | — | `239dd751…454ea838` | ditto |
+| AstroFlash 20220912A | `burst_stats_r117.csv` | — | `b8bb46de…8bbb5264` | ditto |
+| TMRT 20240114A | `apjadfecet2_mrt.txt` (66-session log) | — | `1f975bbc…1401dfe2` | ApJ CDN, open access |
+| TMRT 20240114A | `apjadfecet3_mrt.txt` (155-burst table) | — | `6b9eea7b…20bad867` | ApJ CDN, open access |
+| TMRT 20240114A | `archives.zip` (155 `.ar` cutouts) | 8,274,920 | `19b4066d…3e4f3bb` | China-VO r101581, anonymous download |
+| FAST 20240114A | `FRB20240114A_SuppTab2.csv` (11,553 bursts) | 2,115,004 | `656b2e1d…44e5ab22` | ScienceDB MD5 `a17712f4…` matched; fileId `b2d11e6f…` |
+| arXiv source | `2507.14707.tar.gz` (Zhang Supp. Table 1) | 3,959,052 | `dd1e9620…4647ed45` | arXiv e-print |
+| arXiv source | `2507.14708.tar.gz` (Zhou Table 3) | 6,743,039 | `e654afe2…ce070bdb5` | arXiv e-print |
+| arXiv source | `2210.03607.tar.gz` (Zhou 2022 burst table) | 94,175,772 | `72e63a2a…d659591` | arXiv e-print |
+| arXiv source | `2210.03610.tar.gz` (Niu Table 1) | 25,076,478 | `af4769d4…5b851b3` | arXiv e-print |
+
+\* Full 64-hex digests are recorded programmatically in `phase1/windows/PROVENANCE.json` and reproducible via `shasum -a 256`; the table abbreviates for readability.
+
+**Extracted session logs (`phase1/windows/`, all row counts matching the published session counts exactly):** `fast20240114A_zhou111_sessions.csv` (111), `fast20240114A_zhang57_sessions.csv` (57), `fast20201124A_sepoct_sessions.csv` (18), `tmrt20240114A_sessions.csv` (66), `nancay20220912A_sessions.csv` (68 — filtered from the 240-row multi-target ÉCLAT log by the `2309+4842` pointing), `astroflash20220912A_sessions.csv` (508, verbatim).
+
+**FAST 20201124A Sep–Oct burst table (extracted 2026-08-07):** `phase1/windows/fast20201124A_sepoct_bursts.csv`, 625 rows = **624 unique numbered bursts** (burst No. 108 on 2021-09-28 has two component rows) from `Tex/tab_each_burst.tex`; per-day counts 29/57/169/369. TOAs barycentric MJD at infinite frequency (DE438). **Selection caveat to carry into the analysis:** the paper's prose reports 30/62/208/447 = 747 *detected* bursts; the appendix tabulates only the 624 analysis-quality bursts. The confirmatory event list is the tabulated one; the 123-burst shortfall is the paper's own quality cut and must be stated with any rate-sensitive result for this campaign.
+
+**Still to fetch for H1 freeze:** positive-control tables (Section 2).
+
 ## 2. H1 positive controls (excluded from confirmatory testing)
 
 ### 2.1 FRB 20180916B
@@ -149,3 +180,4 @@ _Every file opened before the relevant tag is listed here with date, purpose, an
 | 2026-08-07 | AstroFlash repo `dbs/` CSVs (session logs, `FRB20220912A_table_paper.csv`, `burst_stats_r117.csv`) | S1/S2 verification and event-grouping check: session sums, unique-burst count, co-detection duplicate identification (required computing minimum pairwise TOA separations) | Log inspection plus the grouping check mandated by prereg_h1 §2.1/§3.1; the pairwise-separation computation was limited to duplicate detection; no periodicity or clustering statistics computed |
 | 2026-08-07 | ApJ MRTs `apjadfecet2_mrt.txt` (66-session log), `apjadfecet3_mrt.txt` (155-burst table); China-VO `archives.zip` file listing (TMRT 20240114A) | S1/S2 verification: session count/sums, burst count, per-session burst totals, deposit accessibility | Log inspection and availability/schema verification; burst-table row count only; no timing-structure statistics computed |
 | 2026-08-07 | CSIRO DAP: 196 collection detail records, 77 PX127 `.log` files and file listings, one ranged PSRFITS header read (Parkes 20240114A) | DAP-reconstruction feasibility: scan dates/times, target paths, config verification | Observatory/session metadata, not burst data; campaign subsequently **excluded** from confirmatory sample |
+| 2026-08-07 | Freeze downloads (Section 1.6): burst tables and session logs for the five verified campaigns; CSV header lines viewed; session-log extraction run with row-count verification | Checksum recording and extraction-script validation required by the freeze checklist | Download + hash does not examine content; inspection limited to header/schema lines and published session logs; no burst-time statistics computed |

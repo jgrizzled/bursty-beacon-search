@@ -1,0 +1,55 @@
+{
+  "script": "scripts/extract_session_logs.py",
+  "script_sha256": "d4ca27269ac9f36c8c5334715d4c762ea38335d8bc3e590b945a87af57723d2c",
+  "outputs": {
+    "fast20240114A_zhou111_sessions.csv": {
+      "source": "data/raw/arxiv_sources/src_2507.14708/2023-SCIYG-for_author.tex",
+      "source_sha256": "5c63cea49cb45b6913636c97201923d193fb47923b566fc24480122569166e17",
+      "rows": 111,
+      "expected_rows": 111,
+      "output_sha256": "8741e9d938549eb58f0b0c4a5d60d4237a2e5f14e221a95fddd948954c44ec21"
+    },
+    "fast20240114A_zhang57_sessions.csv": {
+      "source": "data/raw/arxiv_sources/src_2507.14707/obs_inf.tex",
+      "source_sha256": "536769119ac16052f52979a430ad4dcf37db7f49b25c950bb34f6e4a4c1e4957",
+      "rows": 57,
+      "expected_rows": 57,
+      "output_sha256": "a1eaf453ea7d85ec6a275a0b64647fbb9fabdbb140b18b5d4490a8f57e6925fc"
+    },
+    "fast20201124A_sepoct_sessions.csv": {
+      "source": "data/raw/arxiv_sources/src_2210.03610/table12.tex",
+      "source_sha256": "eed935bcc7d702d00d0fd4a115404d291ab88c9a834b29ad333b044b66e51375",
+      "rows": 18,
+      "expected_rows": 18,
+      "output_sha256": "da16c74e7c04c0691915dc818ae54ce682fdabee2c99d8ef341ea73ad4454a21"
+    },
+    "tmrt20240114A_sessions.csv": {
+      "source": "data/raw/tmrt_20240114A/apjadfecet2_mrt.txt",
+      "source_sha256": "1f975bbc9dd0101c1481f04b287c7fe9b66880c1ae212a442f97c4f51401dfe2",
+      "rows": 66,
+      "expected_rows": 66,
+      "output_sha256": "afa4d2992fcdc9c5f8f8010f12db009f17aaa8a1f934b8f33c63b9f8d630bbf2"
+    },
+    "nancay20220912A_sessions.csv": {
+      "source": "data/raw/nancay_20220912A/Observation times.txt",
+      "source_sha256": "b2c258e10ce4d91dfdaf6a0477251842ef952f16fcaa8956805b6c186df02b43",
+      "rows": 68,
+      "expected_rows": 68,
+      "output_sha256": "f15a80fb4fd773d82d917706294408c37e29dbf545592b775d00ec487e998e73"
+    },
+    "astroflash20220912A_sessions.csv": {
+      "source": "data/raw/astroflash_20220912A/r117_camp_reduced.csv",
+      "source_sha256": "a5f406afbabe855bcd31ab65ef58babb3bde77cb2c20a6f7854ca476651e149b",
+      "rows": 508,
+      "expected_rows": 508,
+      "output_sha256": "d124010f94307bcc36dfed7a91237d129700e1ea9dbf76269b9cb7282c3b148f"
+    },
+    "fast20201124A_sepoct_bursts.csv": {
+      "source": "data/raw/arxiv_sources/src_2210.03607/Tex/tab_each_burst.tex",
+      "source_sha256": "6b9bbfa44fe224986df0cd910a3c6f6c0d9b5190dfe7098a4262f0f32f01258a",
+      "rows": 625,
+      "expected_rows": null,
+      "output_sha256": "268070f79174d4d0a5bf6c11f1db2cd1495e08053689cf72ca3df757762c28c5"
+    }
+  }
+}

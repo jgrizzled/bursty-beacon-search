@@ -124,16 +124,17 @@ All files below are stored under `data/raw/` (gitignored; re-fetchable from the 
 
 ## 2. H1 positive controls (excluded from confirmatory testing)
 
+**Window-model policy for controls (recorded 2026-08-07):** positive controls validate parameter recovery (prereg_h1 Section 9, test 4); they make no confirmatory claim. Approximate window models (e.g. daily CHIME transits weighted by published up-time) are therefore permitted here, clearly labeled, even though window reconstruction is banned for confirmatory sources.
+
 ### 2.1 FRB 20180916B
 
-- CHIME/FRB 2020 (Nature 582, 351) Extended Data Table 1 (28 TOAs) — provenance and machine-readable form **[pending]**.
-- Sand et al. 2023 burst + exposure compilation (original release DOI 10.11570/20.0002) — files and checksums **[pending]**.
+- CHIME/FRB 2020 (Nature 582, 351): arXiv source tarball 2001.10275 downloaded, SHA-256 `d886aa76…8e4d95ef4`; the 28-burst TOA table (barycentric, infinite-frequency, EVN position) confirmed present in `extended_data.tex` — extraction-script extension **[pending]**.
+- Sand et al. 2023 burst + exposure compilation (original release DOI 10.11570/20.0002) — optional supplement, **[pending]**.
 
 ### 2.2 FRB 20121102A
 
-- Braga et al. 2025 epoch compilation (arXiv:2408.12567; Zenodo DOI **[pending — to pin down]**).
-- Cruces et al. 2021 Effelsberg session logs (arXiv:2008.03461) — machine-readable form **[pending]**.
-- Li et al. 2021 FAST 1,652-burst table (ScienceDB 10.11922/sciencedb.01092, CC0) — filenames and checksums **[pending]**.
+- Li et al. 2021 FAST 1,652-burst table: **downloaded and verified 2026-08-07** — `FRB121102_1652burstList.csv` (ScienceDB 10.11922/sciencedb.01092, CC0, fileId `611f73ad…`), MD5 `18416591…` matches deposit, SHA-256 `6a38c154…35a6ef87`. Note: single ~47-day FAST campaign — supports short-baseline recovery checks only.
+- **Long-baseline control input still needed** for the ~157–161 d M1 recovery test: Braga et al. 2025 epoch compilation (arXiv:2408.12567 — Zenodo DOI not yet located; check the paper's data-availability section) or Cruces et al. 2021 Effelsberg session logs (arXiv:2008.03461, tables in-paper). **[pending — one of the two suffices]**.
 
 ## 3. H2/H3 calibration ladder (draft; frozen at `prereg-h2h3-v1.0`)
 

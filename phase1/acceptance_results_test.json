@@ -1,0 +1,81 @@
+{
+  "scale": "test",
+  "smoke_only": true,
+  "config": {
+    "p_min": 1.0,
+    "sigma_min": 0.1,
+    "tau_grid": [
+      0.05,
+      0.15,
+      0.35
+    ]
+  },
+  "n_sims_per_family": 60,
+  "n_injections": 20,
+  "t3_alias": {
+    "sidereal_flagged": true,
+    "solar_x2_flagged": true,
+    "off_alias_unflagged": false,
+    "pass": false
+  },
+  "t4_controls": {
+    "FRB20180916B": {
+      "P_hat_d": 16.3016360766914,
+      "expected": 16.35,
+      "window_model": "continuous (smoke approx)",
+      "pass": true
+    },
+    "FRB20121102A": {
+      "P_hat_d": 147.67950532132005,
+      "expected": "157-161",
+      "window_model": "real Cruces sessions",
+      "pass": true
+    }
+  },
+  "t2_recovery": {
+    "M2": {
+      "n_valid": 18,
+      "recovered": 1,
+      "frac": 0.05555555555555555,
+      "pass": false
+    },
+    "M3": {
+      "n_valid": 19,
+      "recovered": 4,
+      "frac": 0.21052631578947367,
+      "pass": false
+    }
+  },
+  "t5_jitter": {
+    "n_valid": 16,
+    "recovered": 0,
+    "pass": false
+  },
+  "t1_null_uniformity": {
+    "M0": {
+      "ks_p": 0.29448551965774616,
+      "n": 60,
+      "lam_median": 3.9396457649218064,
+      "pass": true
+    },
+    "M1": {
+      "ks_p": 0.21020404372608692,
+      "n": 60,
+      "lam_median": 32.943085442215306,
+      "pass": true
+    },
+    "M4": {
+      "ks_p": 0.6031312664644285,
+      "n": 60,
+      "lam_median": -1147.6552372626238,
+      "pass": true
+    },
+    "M5": {
+      "ks_p": 0.2437748504595002,
+      "n": 60,
+      "lam_median": -256.6631493084478,
+      "pass": true
+    }
+  },
+  "runtime_s": 1858.6
+}

@@ -164,6 +164,53 @@ def extract_zhou2022_bursts(src):
             "fluence_mjy_ms", "group"], rows
 
 
+def extract_chime20180916B(src):
+    """CHIME/FRB 2020 (arXiv:2001.10275) Extended Data Table 1: 28 bursts of
+    FRB 20180916B (TOA barycentric MJD at infinite frequency, EVN position).
+    POSITIVE CONTROL."""
+    rows = []
+    in_toa_table = False
+    for line in src.read_text(errors="ignore").splitlines():
+        if line.lstrip().startswith("%"):
+            continue
+        if "Best-fit parameters" in line:
+            in_toa_table = True
+        if in_toa_table and r"\end{table}" in line:
+            break
+        if not in_toa_table:
+            continue
+        m = re.match(r"^\s*(\d+)\s*&\s*([\d.]+)(?:\$\^\\ast\$)?\s*&\s*"
+                     r"([\d.]+)", line)
+        if m:
+            rows.append(list(m.groups()))
+    return ["burst_no", "toa_mjd_bary_inffreq", "dm_pccm3"], rows
+
+
+def extract_cruces_sessions(src):
+    """Cruces et al. 2021 (arXiv:2008.03461) Table 1: FRB 20121102A follow-up
+    sessions (EFF/AO/GBT), UTC start + duration + event count, 2017-2020.
+    POSITIVE CONTROL."""
+    rows = []
+    for line in src.read_text(errors="ignore").splitlines():
+        m = re.match(
+            r"^\s*(EFF|AO|GBT)\s*&\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?)"
+            r"\s*&\s*(\d+)\s*&\s*(\d+)", line.replace(r"\\", ""))
+        if m:
+            rows.append(list(m.groups()))
+    return ["telescope", "utc_start", "duration_s", "n_events"], rows
+
+
+def extract_cruces_bursts(src):
+    """Cruces et al. 2021 Table 2: 36 Effelsberg bursts of FRB 20121102A
+    (MJD, topocentric-to-barycentric convention per paper). POSITIVE CONTROL."""
+    rows = []
+    for line in src.read_text(errors="ignore").splitlines():
+        m = re.match(r"^\s*B(\d+)\s*&\s*([\d.]+)\s*&", line)
+        if m:
+            rows.append(list(m.groups()))
+    return ["burst_no", "toa_mjd"], rows
+
+
 JOBS = [
     ("fast20240114A_zhou111_sessions.csv", extract_zhou111,
      RAW / "arxiv_sources/src_2507.14708/2023-SCIYG-for_author.tex", 111),
@@ -179,6 +226,15 @@ JOBS = [
      RAW / "astroflash_20220912A/r117_camp_reduced.csv", 508),
     ("fast20201124A_sepoct_bursts.csv", extract_zhou2022_bursts,
      RAW / "arxiv_sources/src_2210.03607/Tex/tab_each_burst.tex", None),
+    # 38 sub-burst rows = CHIME's 28 bursts (their per-event grouping spans
+    # >100 ms); our frozen 100 ms rule yields 35 events — convention
+    # difference recorded in data_manifest.md Section 2.1.
+    ("control_chime20180916B_toas.csv", extract_chime20180916B,
+     RAW / "positive_controls/src_2001.10275/extended_data.tex", 38),
+    ("control_cruces121102_sessions.csv", extract_cruces_sessions,
+     RAW / "positive_controls/src_2008.03461/main.tex", None),
+    ("control_cruces121102_bursts.csv", extract_cruces_bursts,
+     RAW / "positive_controls/src_2008.03461/main.tex", 36),
 ]
 
 

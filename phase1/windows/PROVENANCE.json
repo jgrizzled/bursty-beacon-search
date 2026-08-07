@@ -1,6 +1,6 @@
 {
   "script": "scripts/extract_session_logs.py",
-  "script_sha256": "d4ca27269ac9f36c8c5334715d4c762ea38335d8bc3e590b945a87af57723d2c",
+  "script_sha256": "6a37f4cccbd53134e951210ed0a12cf1d35549ea83ae3c20858d8353ef8ccd93",
   "outputs": {
     "fast20240114A_zhou111_sessions.csv": {
       "source": "data/raw/arxiv_sources/src_2507.14708/2023-SCIYG-for_author.tex",
@@ -50,6 +50,27 @@
       "rows": 625,
       "expected_rows": null,
       "output_sha256": "268070f79174d4d0a5bf6c11f1db2cd1495e08053689cf72ca3df757762c28c5"
+    },
+    "control_chime20180916B_toas.csv": {
+      "source": "data/raw/positive_controls/src_2001.10275/extended_data.tex",
+      "source_sha256": "99829ce9593fa157d5f7a2c4b9fa3973eb57161d779f87f6e22b5f16f5e790ae",
+      "rows": 38,
+      "expected_rows": 38,
+      "output_sha256": "4719efcd8b120e33d9e1930a60d6dd8f3c71c5625e5877adf8e74570cd61bcc6"
+    },
+    "control_cruces121102_sessions.csv": {
+      "source": "data/raw/positive_controls/src_2008.03461/main.tex",
+      "source_sha256": "875eaf0ea2b244f959d7eeb19aa382d6faccb2a5b5e99a989a1c333950154005",
+      "rows": 33,
+      "expected_rows": null,
+      "output_sha256": "2389a79ae6f8be64d7a754e1fc44a25e09cd53aef2f64c527b2e3ba1a8ac701d"
+    },
+    "control_cruces121102_bursts.csv": {
+      "source": "data/raw/positive_controls/src_2008.03461/main.tex",
+      "source_sha256": "875eaf0ea2b244f959d7eeb19aa382d6faccb2a5b5e99a989a1c333950154005",
+      "rows": 36,
+      "expected_rows": 36,
+      "output_sha256": "964933fb9e7056d0d8861f70e896435c78a645808ddcb1ba1f8037b300d9413c"
     }
   }
 }

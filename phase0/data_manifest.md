@@ -126,15 +126,16 @@ All files below are stored under `data/raw/` (gitignored; re-fetchable from the 
 
 **Window-model policy for controls (recorded 2026-08-07):** positive controls validate parameter recovery (prereg_h1 Section 9, test 4); they make no confirmatory claim. Approximate window models (e.g. daily CHIME transits weighted by published up-time) are therefore permitted here, clearly labeled, even though window reconstruction is banned for confirmatory sources.
 
-### 2.1 FRB 20180916B
+### 2.1 FRB 20180916B — complete
 
-- CHIME/FRB 2020 (Nature 582, 351): arXiv source tarball 2001.10275 downloaded, SHA-256 `d886aa76…8e4d95ef4`; the 28-burst TOA table (barycentric, infinite-frequency, EVN position) confirmed present in `extended_data.tex` — extraction-script extension **[pending]**.
-- Sand et al. 2023 burst + exposure compilation (original release DOI 10.11570/20.0002) — optional supplement, **[pending]**.
+- CHIME/FRB 2020 (Nature 582, 351): arXiv source tarball 2001.10275, SHA-256 `d886aa76…8e4d95ef4`. TOA table extracted to `phase1/windows/control_chime20180916B_toas.csv`: **38 sub-burst rows = CHIME's 28 bursts**. Grouping-convention note: CHIME groups per trigger event (components can span > 100 ms), so our frozen 100 ms rule yields 35 events from the same rows — immaterial for the M1 period-recovery test, recorded for transparency.
+- Window model: approximate daily-transit windows per the controls policy above.
+- Sand et al. 2023 compilation (DOI 10.11570/20.0002) — optional supplement, not required.
 
-### 2.2 FRB 20121102A
+### 2.2 FRB 20121102A — complete
 
-- Li et al. 2021 FAST 1,652-burst table: **downloaded and verified 2026-08-07** — `FRB121102_1652burstList.csv` (ScienceDB 10.11922/sciencedb.01092, CC0, fileId `611f73ad…`), MD5 `18416591…` matches deposit, SHA-256 `6a38c154…35a6ef87`. Note: single ~47-day FAST campaign — supports short-baseline recovery checks only.
-- **Long-baseline control input still needed** for the ~157–161 d M1 recovery test: Braga et al. 2025 epoch compilation (arXiv:2408.12567 — Zenodo DOI not yet located; check the paper's data-availability section) or Cruces et al. 2021 Effelsberg session logs (arXiv:2008.03461, tables in-paper). **[pending — one of the two suffices]**.
+- **Cruces et al. 2021 (arXiv:2008.03461) tables extracted 2026-08-07** (tarball SHA-256 `0c4b194b…a1a6c2bb4`): `control_cruces121102_sessions.csv` — all 33 tabulated sessions (EFF/AO/GBT, UTC start + duration + event count, 2017-09 → 2020-06; the paper's "34 epochs" adds earlier published Hardy/Houben epochs not tabulated); `control_cruces121102_bursts.csv` — 36 Effelsberg burst MJDs. Sufficient for the ~157–161 d M1 recovery test; the Braga 2025 compilation is no longer needed.
+- Li et al. 2021 FAST 1,652-burst table: downloaded and verified — `FRB121102_1652burstList.csv` (ScienceDB 10.11922/sciencedb.01092, CC0), MD5 matches deposit, SHA-256 `6a38c154…35a6ef87`. Single ~47-day campaign; short-baseline recovery checks.
 
 ## 3. H2/H3 calibration ladder (draft; frozen at `prereg-h2h3-v1.0`)
 
@@ -162,9 +163,9 @@ Per preregistration Section 6. Every source/event used here is permanently exclu
 
 ## 5. Software environment (pinned at each freeze)
 
+- Working environment (recorded 2026-08-07, finalized at tag): Python 3.12.2, numpy 2.5.1, scipy 1.18.0, astropy 8.0.1 — full transitive lock in `phase0/requirements-lock.txt` (`.venv` local, gitignored).
 - Repository commit: **[pending at tag]**
-- Python / numpy / scipy / astropy / erfa versions: **[pending at tag]**
-- Solar-system ephemeris: DE440, file hash **[pending at tag]**
+- Solar-system ephemeris: DE440, file hash **[pending at tag — recorded when the barycentric window conversion is wired into the full-scale run]**
 - Observatory coordinates: astropy sites registry version **[pending at tag]**
 
 ## 6. Pre-freeze inspection log

@@ -197,7 +197,7 @@ Before freeze, `data_manifest.md` must contain, for every confirmatory and posit
 
 All on synthetic data drawn through the real verified window functions; all must pass before `prereg-h1-v1.0` is tagged:
 
-1. **Null uniformity:** under each of M0, M1, M4, M5 (parameters at the real-data fits), single-source local p-values are uniform (KS test p > 0.01 on 1,000 simulations).
+1. **Null uniformity:** under each of M0, M1, M4, M5, single-source local p-values are uniform (KS test p > 0.01 on 1,000 simulations). _Pre-freeze correction (2026-08-07): null parameters for these pre-tag tests are set from **published per-session rates** (public metadata), not from fits to confirmatory event times — fitting real event data before the tag would violate the freeze policy. The real-data-fit calibration of Section 6.2 runs after the tag, as specified._
 2. **Scanner recovery:** injected M2/M3 streams across the grid with ≥ 25 in-visit events: ≥ 90% recovered with the likelihood maximum within one grid step of the injected (T, τ_c); ≥ 95% of injected periods captured by the grid (Section 5.3 completeness).
 3. **Alias flagging:** injected scanners at sidereal- and solar-rational periods are alias-flagged by the frozen rule.
 4. **Positive controls:** M1 recovers the published FRB 20180916B activity window (period within published uncertainty) and prefers a ~150–160 d window for FRB 20121102A.

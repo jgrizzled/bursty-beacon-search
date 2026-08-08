@@ -27,6 +27,7 @@ packages:
   # compute-run tooling (bursty-beacon-search acceptance suite)
   - git
   - gcc
+  - tar # required by the uv installer; absent from the minimal image
   - tmux
   - htop
 

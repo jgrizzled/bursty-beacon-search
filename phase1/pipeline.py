@@ -174,11 +174,15 @@ def scanner_intervals(T, sigma, tau=None):
     return iv
 
 
-def scanner_grids(span, p_min, sigma_min, sigma_factor=2.0, f_oversample=2.0):
+def scanner_grids(span, p_min, sigma_min, sigma_factor=2.0, f_oversample=2.0,
+                  detail=False):
     """Frozen grid rule (prereg_h1 Section 5): octave-wise uniform frequency
-    grid with df = sigma_min / (f_oversample * T_oct_max * span)."""
+    grid with df = sigma_min / (f_oversample * T_oct_max * span).
+    detail=True additionally returns per-octave metadata including the
+    frequency grids themselves (used by the committed alias-set artifacts,
+    which must be computed on exactly this grid)."""
     p_max = span / 3.0
-    grids = []
+    grids, octaves = [], []
     t_lo = p_min
     while t_lo < p_max:
         t_hi = min(2.0 * t_lo, p_max)
@@ -186,8 +190,17 @@ def scanner_grids(span, p_min, sigma_min, sigma_factor=2.0, f_oversample=2.0):
         f = np.arange(1.0 / t_hi, 1.0 / t_lo, df)
         if len(f):
             grids.append(1.0 / f)
+            octaves.append({"t_lo_d": t_lo, "t_hi_d": t_hi, "df_per_d": df,
+                            "f": f})
         t_lo = t_hi
-    return grids
+    return (grids, octaves) if detail else grids
+
+
+def frozen_tau_grid():
+    """Frozen tau_c grid (prereg_h1 Section 5.2): logarithmic, factor 1.5,
+    from 60 s to 12 h (the per-period cap min(12 h, T/2) is applied at scan
+    time). 17 values, 60 s ... 10.97 h."""
+    return list(60.0 / DAY_S * 1.5 ** np.arange(17))
 
 
 def _scan_periods(args):

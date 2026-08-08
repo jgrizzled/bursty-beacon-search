@@ -56,8 +56,10 @@ SEPOCT_RATE = 996.0 / (18 * 3600.0 / pl.DAY_S)  # bursts/day during sessions
 
 TEST = dict(p_min=1.0, sigma_min=0.10, tau_grid=[0.05, 0.15, 0.35],
             m1_kw=dict(n_periods=40, n_phase=8))
+# tau grid: the frozen factor-1.5 rule of prereg_h1 Section 5.2 (an earlier
+# draft used a 12-point geomspace here; corrected pre-freeze to match).
 FULL = dict(p_min=1.0 / 24.0, sigma_min=60.0 / pl.DAY_S,
-            tau_grid=list(np.geomspace(60.0 / pl.DAY_S, 0.5, 12)),
+            tau_grid=pl.frozen_tau_grid(),
             m1_kw=dict(n_periods=200, n_phase=24))
 
 

@@ -1,0 +1,77 @@
+{
+ "computed_utc": "2026-08-08T01:31:32+00:00",
+ "campaigns": {
+  "nancay20220912A": {
+   "n_sessions": 68,
+   "span_days": 186.502,
+   "live_days": 2.541,
+   "p_max_d": 62.1673,
+   "alias_tolerance_per_d": 0.010724,
+   "n_f_total": 5616751,
+   "n_peak_intervals": 37,
+   "alias_flagged_frac": 0.0451,
+   "artifact": "phase1/grids/nancay20220912A_grid_alias.json",
+   "artifact_sha256": "0fa8f864b8dc366c24b6df2f7ddb54a9661016e5e6e15737d796328cb656a06a"
+  },
+  "astroflash20220912A": {
+   "n_sessions": 508,
+   "span_days": 115.456,
+   "live_days": 95.163,
+   "p_max_d": 38.4853,
+   "alias_tolerance_per_d": 0.017323,
+   "n_f_total": 3259957,
+   "n_peak_intervals": 1,
+   "alias_flagged_frac": 0.0607,
+   "artifact": "phase1/grids/astroflash20220912A_grid_alias.json",
+   "artifact_sha256": "8fdc6cc3eebfdce23f7e1c5d26cd1456b71ecce77f92d18d43739bb2003429fb"
+  },
+  "fast20240114A": {
+   "n_sessions": 111,
+   "span_days": 612.344,
+   "live_days": 2.694,
+   "p_max_d": 204.1146,
+   "alias_tolerance_per_d": 0.003266,
+   "n_f_total": 21508228,
+   "n_peak_intervals": 4,
+   "alias_flagged_frac": 0.0116,
+   "artifact": "phase1/grids/fast20240114A_grid_alias.json",
+   "artifact_sha256": "f400254f9ed1a686a50a55a1eea68e4948ef56944e0e230cffb24b6299840e9f"
+  },
+  "fast20201124A_sepoct": {
+   "n_sessions": 18,
+   "span_days": 21.979,
+   "live_days": 0.784,
+   "p_max_d": 7.3264,
+   "alias_tolerance_per_d": 0.090995,
+   "n_f_total": 466756,
+   "n_peak_intervals": 11,
+   "alias_flagged_frac": 0.4278,
+   "artifact": "phase1/grids/fast20201124A_sepoct_grid_alias.json",
+   "artifact_sha256": "d78ee3e2a4ff2ae48b2da140c51620d588499606c6313d2ce7d2202adb621705"
+  },
+  "tmrt20240114A": {
+   "n_sessions": 66,
+   "span_days": 383.051,
+   "live_days": 7.595,
+   "p_max_d": 127.6835,
+   "alias_tolerance_per_d": 0.005221,
+   "n_f_total": 12682548,
+   "n_peak_intervals": 4,
+   "alias_flagged_frac": 0.019,
+   "artifact": "phase1/grids/tmrt20240114A_grid_alias.json",
+   "artifact_sha256": "fd3419251fcd0cd9c47c6df46e8d195d3548db55ea496530b4489f494d0cad75"
+  },
+  "effelsberg20200120E": {
+   "n_sessions": 46,
+   "span_days": 494.602,
+   "live_days": 5.569,
+   "p_max_d": 164.8672,
+   "alias_tolerance_per_d": 0.004044,
+   "n_f_total": 16996628,
+   "n_peak_intervals": 2,
+   "alias_flagged_frac": 0.0303,
+   "artifact": "phase1/grids/effelsberg20200120E_grid_alias.json",
+   "artifact_sha256": "bc31163dfd2a2703a4fd26feeeb62779f7c1c5c92efacefbffda4929f0394369"
+  }
+ }
+}

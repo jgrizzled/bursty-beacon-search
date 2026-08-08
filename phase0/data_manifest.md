@@ -148,6 +148,23 @@ All files below are stored under `data/raw/` (gitignored; re-fetchable from the 
 
 **Still to fetch for H1 freeze:** positive-control tables (Section 2).
 
+### 1.8 Frozen alias sets and search grids (computed and committed 2026-08-07, before any scan)
+
+Produced by `scripts/compute_alias_sets.py` from the six extracted window functions, on exactly the scan grid (`pipeline.scanner_grids`, prereg_h1 Sections 5.1–5.4); artifacts `phase1/grids/<campaign>_grid_alias.json` (+ `SUMMARY.json`) record input/script SHA-256, per-octave grids, day-rational set, spectral-window peak intervals (|W̃|² > 0.2), and per-octave alias-flagged fractions. Multi-station AstroFlash uses the summed-exposure spectral window (concatenated station GTIs — matches the joint likelihood's exposure integral). Windows enter on their published topocentric axis (frequency error O(10⁻⁸) relative, negligible vs the 2/T_span tolerance).
+
+| Campaign | Sessions | Span (d) | Windowed (d)* | P_max (d) | Grid points | Peak intervals | Alias-flagged frac |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Nançay 20220912A | 68 | 186.5 | 2.54 | 62.2 | 5,616,751 | 37 | 0.045 |
+| AstroFlash 20220912A | 508 | 115.5 | 95.16 | 38.5 | 3,259,957 | 1 | 0.061 |
+| FAST 20240114A (Zhou 111) | 111 | 612.3 | 2.69 | 204.1 | 21,508,228 | 4 | 0.012 |
+| FAST 20201124A Sep–Oct | 18 | 22.0 | 0.78 | 7.3 | 466,756 | 11 | **0.428** |
+| TMRT 20240114A | 66 | 383.1 | 7.60 | 127.7 | 12,682,548 | 4 | 0.019 |
+| Effelsberg 20200120E | 46 | 494.6 | 5.57 | 164.9 | 16,996,628 | 2 | 0.030 |
+
+\* Sum of session start→end spans (multiplicity-weighted for the multi-station AstroFlash row, whose spans total ~4% above the paper's 2,191.4 recorded hours — session spans include short recording gaps; same caveat class as the Nimmo VLBI durations, recorded here).
+
+The 42.8% flagged fraction for the 22-day FAST 20201124A campaign is the prereg Section 5.4 blanket property operating as designed; alias-clear discovery space comes from the long-baseline campaigns and cross-campaign confirmation. Prominent peaks sit at the near-daily scheduling comb (~1 d⁻¹ and harmonics); Effelsberg additionally shows an ~11.4 d cadence peak (PRECISE revisit rhythm).
+
 ## 2. H1 positive controls (excluded from confirmatory testing)
 
 **Window-model policy for controls (recorded 2026-08-07):** positive controls validate parameter recovery (prereg_h1 Section 9, test 4); they make no confirmatory claim. Approximate window models (e.g. daily CHIME transits weighted by published up-time) are therefore permitted here, clearly labeled, even though window reconstruction is banned for confirmatory sources.

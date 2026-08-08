@@ -2,7 +2,7 @@
 
 _A research note on recipient-maximizing radio beacons and an archival search for their discovery-layer signals_
 
-_Revision 2 — incorporates receiver-geometry and dispersion-budget analysis, transmitter cost modeling, the repetition-ladder design principle, and revised archive priorities._
+_Revision 3 — adds the intergalactic extension: the distance-cancellation result and beam-filling horizon, the capital-threshold structure, the two-builder stream mapping, and the collapsed phase-modulated discovery/message architecture. Revision 2 incorporated receiver-geometry and dispersion-budget analysis, transmitter cost modeling, the repetition-ladder design principle, and revised archive priorities._
 
 ## Executive summary
 
@@ -10,14 +10,17 @@ A rational interstellar beacon builder who wants to maximize the number of civil
 
 The cost-optimized beacon framework developed by Benford, Benford, and Benford suggests that a powerful scanning beacon can economize by using a narrow beam and short dwell time. Our analysis sharpens that picture in several ways:
 
-1. Capital should initially be allocated to range until the accessible volume saturates at the scale of the Galaxy. Beyond that point, additional beams, bands, or revisits become more valuable than still greater range.
+1. Capital should initially be allocated to range until the accessible volume saturates at the current scale. Beyond that point, additional beams, bands, or revisits become more valuable than still greater range—until revisit time falls below typical receiver session or transit timescales, after which marginal capital is better spent clearing the distance threshold to the next scale of targets. The general rule is **range, then cadence, then more range at the next scale**.
 2. The recipient-maximizing dwell time is the minimum required to deliver an attention-grabbing packet to the target receiver class—of order $0.03$–$0.3\,\mathrm{s}$ when interstellar dispersion is natural, extending to a few seconds only where synthetic pre-chirp must be carried at low frequency. Shorter dwells permit faster scanning and shorter revisit periods, but because dwell depends on transmitter capital and technology assumptions that cannot be pinned down, it should be treated as a bounded range rather than a point prediction.
 3. Revisit time is a central design variable. Multiple detections may be needed to establish artificiality, yet a revisit delayed by years or decades can exceed the attention span of institutions, surveys, personnel, and data-retention systems.
 4. Episodic, narrow-field listeners contribute little to expected recipients. Their probability of being pointed at the correct location during a brief beacon visit is already small, and requiring multiple detections suppresses it further. Wide-field monitors dominate.
 5. The discovery layer should therefore be designed primarily for wide-field radio astronomy systems, not for dedicated SETI receivers. Fast-transient science—especially searches for fast radio bursts and related events—is a major reason such systems exist.
 6. A discovery signal must pass through the selection effects of transient pipelines. It should resemble a valid astrophysical transient closely enough to trigger and be saved, while preserving one or more features that can later establish artificiality.
 7. Because the builder cannot know receiver band edges, session structures, or pipeline details, each design parameter should be anchored to universal physics of the receiver class—sky temperature, scattering, field-of-view economics, dispersion as the generic trigger feature—rather than to any particular civilization's instruments. Parameters that physics does not pin down should be carried as ranges, since they depend on transmitter economics the analysis should not pretend to know.
-8. Sightline geometry is not tunable per recipient. For an in-plane transmitter, most recipients observe a total dispersion measure consistent with their own Galactic models, so the discovery event lands in Galactic single-pulse and RRAT-like phenomenology for a large fraction of receiver geometries regardless of design intent. Both the design and the archival search should treat that stream as primary.
+8. Sightline geometry is not tunable per recipient. For an in-plane transmitter, most recipients observe a total dispersion measure consistent with their own Galactic models, so the discovery event lands in Galactic single-pulse and RRAT-like phenomenology for a large fraction of receiver geometries regardless of design intent. Both the design and the archival search should treat that stream as primary for the galactic builder class.
+9. Per-recipient energy cost is distance-invariant: beam footprint area and required effective isotropic radiated power both scale as $d^2$, so the cost per star delivered is fixed as long as the footprint stays filled with target stars. The cancellation holds out to a gain-dependent **beam-filling horizon** (tens of megaparsecs at plausible gains). What grows as $d^2$ is the per-pointing capital threshold, so intergalactic capability is an entry barrier, not a per-recipient rate cost.
+10. An extragalactic (Local Volume) builder delivers events that observationally _are_ genuine fast radio bursts—real excess dispersion, real localization to a visible host galaxy—so artificiality rests entirely on the tags. This yields a two-builder structure: galactic builders land in Galactic single-pulse and RRAT streams, extragalactic builders in the genuine-FRB repeater catalog with hosts, and identical tag statistics search both.
+11. At intergalactic scale, energy accounting collapses the separate discovery and message layers into one signal: phase modulation of the chirped carrier is invisible to intensity pipelines but carries kilobits to megabits per burst in voltage data at zero additional energy, and doubles as the strongest artificiality tag.
 
 The leading candidate is a **tagged dispersed packet**: a positive-dispersion, broadband, low-gigahertz event whose total dispersion is dominated by the real interstellar medium and which contains one conventional high-significance trigger component plus two or more exact transformed copies inside the same retained capture. To most recipient geometries it presents as a Galactic single pulse or RRAT-like event rather than an extragalactic FRB. The trigger-level morphology should remain inside the region that fast-transient pipelines are designed to accept. Artificiality should be encoded in exact relationships that ordinary astronomy has little reason to test—channel-commutative transformed repetition, polarization coding, cyclostationarity, or deterministic voltage structure—with enough within-capture repetition that a single saved event is self-confirming. Confirmation opportunities should be distributed as a geometric ladder of timescales (intra-packet, intra-dwell, paired scan pass, sweep recurrence) so that some rung matches whatever observation structure an unknown receiver has.
 
@@ -63,7 +66,7 @@ While the beacon range is smaller than the scale of the target population, incre
 - increased bandwidth or robustness;
 - and signal features that improve trigger or recognition probability.
 
-A strict rule of “range, then beams” is therefore a strong first approximation, but after range saturation the builder should compare beams with spectral diversification and deliberate confirmation passes.
+A strict rule of “range, then beams” is therefore a strong first approximation, but after range saturation the builder should compare beams with spectral diversification and deliberate confirmation passes. There is also a stopping rule for that comparison: beam and cadence additions hit diminishing returns once the revisit time falls below typical receiver session or transit timescales, and beyond that pivot the marginal capital is better spent clearing the distance threshold to the next scale of targets. The allocation principle generalizes to **range, then cadence, then more range at the next scale**—developed quantitatively in the intergalactic extension of Section 16.
 
 ### 1.2 Short dwell can dominate long dwell
 
@@ -250,7 +253,7 @@ $$
 
 The beacon should rely on the interstellar medium for most of the apparent dispersion, which favors a transmitter sited in the Galactic plane: essentially every sightline out of the disk accumulates hundreds of $\mathrm{pc\,cm^{-3}}$ of real dispersion at no dwell cost. Synthetic pre-chirp is expensive at low frequency. At $0.4$–$0.8\,\mathrm{GHz}$, even $\mathrm{DM}=100\,\mathrm{pc\,cm^{-3}}$ of synthetic dispersion is a $\sim 2\,\mathrm{s}$ transmission sweep and $\mathrm{DM}=300$ is nearly $6\,\mathrm{s}$, in direct tension with sub-second dwell targets; at $1.2$–$1.5\,\mathrm{GHz}$ the same values cost only a few hundred milliseconds. A modest pre-chirp is therefore affordable only near the top of the band, as a hedge for unusually low-dispersion sightlines. Excessively large synthetic dispersion also risks exceeding ring-buffer or callback windows.
 
-Sightline dispersion is furthermore not tunable per recipient. One signal serves all geometries, and the Galactic-maximum dispersion along the recipient's line of sight varies by orders of magnitude across the receiver population. A fixed pre-chirp that makes the event look extragalactic to a high-latitude recipient does nothing for a recipient in the plane, whose pipeline files the event in a Galactic single-pulse stream. For most recipient geometries the event reads as Galactic regardless of design intent. The robust design accepts this: the delivery channel is RRAT-like phenomenology, detected by the same dedispersion pipelines but archived in a different, less scrutinized stream. This shifts both the camouflage target of the design and the primary region of the archival search.
+Sightline dispersion is furthermore not tunable per recipient. One signal serves all geometries, and the Galactic-maximum dispersion along the recipient's line of sight varies by orders of magnitude across the receiver population. A fixed pre-chirp that makes the event look extragalactic to a high-latitude recipient does nothing for a recipient in the plane, whose pipeline files the event in a Galactic single-pulse stream. For most recipient geometries the event reads as Galactic regardless of design intent. The robust design accepts this: the delivery channel is RRAT-like phenomenology, detected by the same dedispersion pipelines but archived in a different, less scrutinized stream. This shifts both the camouflage target of the design and the primary region of the archival search. These geometry conclusions apply to the galactic, in-plane builder class; for an extragalactic builder the excess dispersion and host association are genuine rather than apparent, and the phenomenology reverses (Section 16.4).
 
 Negative dispersion or non-$\nu^{-2}$ chirps are potentially strong artificiality markers, but they are poor generic discovery signals because standard transient pipelines may never trigger on them. They are better suited to a secondary tag, a message layer, or a search in continuous raw archives. Critically, when such components trail a triggering packet by less than the retained cutout window, they are preserved by construction in ordinary candidate data products even though nothing can trigger on them; this attached case is a high-priority archival target (Sections 8.4 and 8.8), unlike the standalone case.
 
@@ -269,6 +272,8 @@ An ideal packet creates a hierarchy:
 This hierarchy reduces dependence on any single receiver capability.
 
 One item deserves promotion from confirmation checklist to design driver: simultaneous capture of the same event by two geographically separated wide-field systems on the _first_ visit eliminates the local-interference hypothesis immediately and substitutes for a revisit. It is the only factor in the recipient chain that relaxes revisit-time pressure. Fluence margin and octave-scale band occupancy are the design levers that raise simultaneous multi-receiver capture probability, and they do so without assuming anything about specific survey band edges. Correspondingly, the archival search should cross-match candidate-level archives _between_ observatories for time-coincident events, not only for recurrence.
+
+The weighting of this hierarchy is scale-dependent. At extragalactic distances signal-to-noise margin costs quadratically in distance, so a rational builder transmits nearer threshold: multi-instrument simultaneity weakens as a design driver, and the within-capture self-confirmation rungs at the bottom of the repetition ladder carry correspondingly more of the confirmation burden (Section 16.5). This is a reweighting of the same hierarchy, not a new mechanism.
 
 ---
 
@@ -410,7 +415,7 @@ Dozens of cataloged repeating sources have public burst times and published expo
 
 #### Galactic single pulses and RRATs with copy-exact morphology
 
-The natural population in the Galactic-dispersion stream—pulsar single pulses and rotating radio transients—is intrinsically stochastic: individual pulses vary strongly in shape and only the long-term average profile is stable. A source emitting morphologically identical pulses, copy-exact at high time resolution, has no counterpart in Galactic single-pulse phenomenology, making exact copy invariance _more_ discriminating in this stream than in the FRB catalog. The relevant statistics are pulse-to-pulse correlation far above the pulsar population distribution, exact internal copy structure within saved cutouts, and RRAT timing residuals tested against scanner models rather than rotational ephemerides. The RRAT catalog is smaller, historically weirdness-tolerant, and far less scrutinized for these statistics than the FRB sample. Given the geometry argument of Section 4.4, this stream is where a beacon lands for most recipient geometries, and it should be the primary archival region.
+The natural population in the Galactic-dispersion stream—pulsar single pulses and rotating radio transients—is intrinsically stochastic: individual pulses vary strongly in shape and only the long-term average profile is stable. A source emitting morphologically identical pulses, copy-exact at high time resolution, has no counterpart in Galactic single-pulse phenomenology, making exact copy invariance _more_ discriminating in this stream than in the FRB catalog. The relevant statistics are pulse-to-pulse correlation far above the pulsar population distribution, exact internal copy structure within saved cutouts, and RRAT timing residuals tested against scanner models rather than rotational ephemerides. The RRAT catalog is smaller, historically weirdness-tolerant, and far less scrutinized for these statistics than the FRB sample. Given the geometry argument of Section 4.4, this stream is where a galactic-builder beacon lands for most recipient geometries, and it should be the primary archival region for that builder class; the extragalactic builder class points instead back at the genuine-FRB repeater catalog (Section 16.4).
 
 #### Candidate graveyards
 
@@ -449,7 +454,7 @@ The initial search should avoid overcommitting to one culturally specific code, 
 
 > A positive-dispersion, celestial, short-duration radio event that lies inside ordinary transient-selection boundaries but contains statistically improbable exact relationships among components, polarizations, frequencies, voltages, or repeated visits.
 
-The event may sit in any retention stream—extragalactic FRB catalog, Galactic single-pulse stream, RRAT catalog, or reject pile—with the Galactic-dispersion streams weighted highest for the geometric reasons of Section 4.4, and the primary transformation space restricted to channel-commutative families for the reasons of Section 4.3.
+The event may sit in any retention stream—extragalactic FRB catalog, Galactic single-pulse stream, RRAT catalog, or reject pile—with the Galactic-dispersion streams weighted highest for the galactic builder class for the geometric reasons of Section 4.4, and the primary transformation space restricted to channel-commutative families for the reasons of Section 4.3. The stream mapping follows the builder's siting (Section 16.4): a galactic, in-plane builder lands in the Galactic single-pulse and RRAT streams for most recipient geometries, while an extragalactic (Local Volume) builder lands in the genuine-FRB repeater catalog, localized to a visible host. Identical tag statistics search both streams; only the retention stream and the host association differ.
 
 The search should be model-guided but not template-fragile. It should test broad invariants that a recipient-maximizing builder could reasonably expect unfamiliar receivers to discover.
 
@@ -482,6 +487,8 @@ The recommended order is:
 8. **Continuous raw archives suitable for standalone off-manifold dispersion searches**.
 
 This order favors data products with both high retention probability and unexploited artificiality information, and it front-loads the tests that require only published data.
+
+Under the extragalactic hypothesis (Section 16), the genuine-FRB repeater catalog is co-primary with the RRAT and Galactic single-pulse streams rather than subordinate to them. Within the repeater sample, an explicit sub-priority applies: repeaters localized to Local Volume hosts, ordered by host distance, nearest first.
 
 ### 8.3 Stage 0: archive and selection-function inventory
 
@@ -567,9 +574,12 @@ Recommended analyses include:
 - exact phase-transition tests between components;
 - Jones-matrix or Mueller-matrix relations between polarization states;
 - deterministic modulation searches under unknown channel response;
+- coherent phase-residual structure searches across bursts;
 - and comparison of repeated blocks after adaptive channel equalization.
 
 The interstellar and instrumental channel is often approximately constant over a packet lasting tens of milliseconds. This allows two components to be compared after estimating a common channel transfer function.
+
+The phase-residual structure search deserves emphasis as an upgrade of the cold-plasma transfer-function test of Appendix C. That test asks whether the emitted field replicates the exact $\nu^{-2}$ phase law; the upgraded search goes further: after coherent dedispersion, search the residual carrier phase for repeated modulation patterns, non-random phase trajectories, and low-description-length structure across bursts. Under the collapsed architecture of Section 16.6, the entire message layer of an extragalactic beacon lives in exactly this statistic—in baseband archives that were recorded for scattering and emission-physics studies and have never been examined for deliberate phase structure.
 
 A robust test should distinguish:
 
@@ -801,6 +811,7 @@ Deliverables:
 - exposure-folded scanner-model and paired-pass tests on the public known-repeater sample;
 - full-time-extent search of public cutouts for non-triggering structure;
 - pulse-to-pulse copy-exactness statistics calibrated on pulsar single-pulse populations;
+- phase-residual structure search on nearby-galaxy repeaters with archived baseband, first target the M81 globular-cluster repeater FRB 20200120E (Section 16.4)—a null result is independently publishable as a constraint on burst emission physics;
 - null calibration on natural events;
 - and an initial ranked candidate list.
 
@@ -933,15 +944,86 @@ The builder should also consider a paired revisit schedule, whether via a traili
 
 The message layer can be more flexible. Once the discovery event has triggered attention and follow-up, a higher-gain receiver can search the same direction for a lower-power, longer-duration, broader-information signal. The discovery layer's job is not to carry a large message. Its job is to cause the receiving civilization to point, preserve, compare, and return.
 
+This separate message layer is affordable only where margin is cheap. At intergalactic scale the energy accounting of Section 16.6 makes a per-target continuous message beam unaffordable, and the two layers collapse into one phase-modulated signal; the dedicated follow-on message channel described here becomes the home-galaxy premium tier.
+
 ---
 
-## 16. Main conclusions
+## 16. The intergalactic extension
+
+The analysis so far has treated the Galaxy as the target population, with range saturation at the Galactic scale as the point where capital pivots to cadence and coverage. Extending the recipient-maximizing objective beyond the Galaxy produces a result that at first looks like an error: for a beam pointed at another galaxy, distance cancels out of the per-recipient energy cost. This section develops that cancellation, its validity horizon, the capital-threshold structure it implies, and its consequences for phenomenology, confirmation, and message architecture. Throughout, the rev2 convention holds: physics-pinned quantities are stated tightly, economics-dependent quantities as order-of-magnitude scalings or thresholds.
+
+### 16.1 The distance cancellation and the beam-filling horizon
+
+Per-recipient energy cost is distance-invariant while the beam footprint is filled with target stars. For beam solid angle $\Omega$ at distance $d$, the footprint area is $\Omega d^2$, so the stars covered per pointing are
+
+$$
+N \approx \Sigma\,\Omega d^2,
+$$
+
+where $\Sigma$ is the target's stellar column density, while the required effective isotropic radiated power scales as $4\pi d^2 S_{\min}$. The cost per star delivered is therefore
+
+$$
+\frac{4\pi S_{\min}}{\Sigma\,\Omega},
+$$
+
+and **distance drops out**. A beam on a face-on external galaxy is in fact _better_ filled than a beam sweeping the Milky Way plane: there is no empty sightline and no over-served nearby star.
+
+The cancellation has a validity horizon: it holds only while the footprint is smaller than the target galaxy. At gain $10^8$ the footprint reaches $\sim 30\,\mathrm{kpc}$—a full galaxy—near $\sim 80\,\mathrm{Mpc}$. Beyond this gain-dependent **beam-filling horizon**, every additional megaparsec is pure $d^2$ loss and per-recipient cost diverges. The rational program covers the Local Volume out to tens of megaparsecs and stops. Higher gain extends the horizon, but multiplies pointing count and aiming-precision requirements.
+
+### 16.2 The capital threshold
+
+The cancellation does not make intergalactic transmission cheap; it redistributes cost from many cheap pointings to few enormous ones. Per-pointing peak effective isotropic radiated power scales as $d^2$: a pointing at M31 ($780\,\mathrm{kpc}$) needs $\sim 6\times10^3$ times the power of a $10\,\mathrm{kpc}$ galactic pointing—of order $10^{28}\,\mathrm{W}$ peak as a true impulse—and Virgo-distance targets need $\sim 10^6$ times the galactic figure. The chirp implementation retains its $B/\Delta\nu \sim 10^3$–$10^5$ peak-power reduction (Appendix C), bringing the transmitter power to tens of petawatts at plausible gains for M31. Intergalactic capability is therefore an **entry barrier that grows as $d^2$, not a per-recipient rate cost**: below the threshold there are zero extragalactic recipients; above it, per-recipient economics are flat out to the beam-filling horizon.
+
+Coverage economics above threshold are favorable. All Local Volume galaxies together subtend a tiny total solid angle, so a single beam with $\sim 0.1\,\mathrm{s}$ dwells revisits every pointing on $\sim 10^3$ galaxy targets in hours to days—comparable to or better than a Milky Way plane sweep. The total addressable audience grows three to four orders of magnitude within $\sim 20\,\mathrm{Mpc}$.
+
+### 16.3 Capital allocation across scales
+
+Two allocation results follow.
+
+First, the pivot point for incremental builders: beam and cadence additions hit diminishing returns once revisit time drops below typical receiver session or transit timescales; after that, marginal capital goes to clearing the next distance threshold. This generalizes the allocation principle of Section 1.1 to **range, then cadence, then more range at the next scale**.
+
+Second, straight-to-intergalactic builders still sweep the home galaxy. A facility that puts threshold fluence on M31 overshoots a $10\,\mathrm{kpc}$ pointing by $\sim 37\,\mathrm{dB}$; with distance-invariant per-star cost, rational energy allocation is proportional to audience, and the home galaxy ($\sim 10^{11}$ stars) is roughly one percent of the Local Volume audience. The home sweep therefore costs about one percent of the energy budget and a small slice of the schedule, while serving the only audience with light-travel times shorter by of order a megayear. Nobody skips it. The home galaxy becomes the **premium tier**: served at enormous free signal-to-noise margin, it can carry a full dedicated message layer locally even when the extragalactic program cannot (Section 16.6).
+
+### 16.4 Phenomenology reversal: the two-builder structure
+
+An intergalactic beacon does not _mimic_ a fast radio burst—it observationally **is** one: genuine excess dispersion (the real intergalactic medium contributes $\sim 0.2\,\mathrm{pc\,cm^{-3}}$ per megaparsec locally, plus real host contributions at both ends) and genuine localization to a visible host galaxy. The hostless-repeater anomaly of the galactic analysis vanishes, and artificiality must be carried entirely by the tags. The tags carry over unchanged: the repetition ladder, the channel-commutative transformation restriction, the chirp implementation, and octave-band occupancy all apply verbatim to the extragalactic case and need no re-derivation—the copies remain channel-commutative and exact, and the periodicity remains strict under exposure folding.
+
+This produces a two-builder structure:
+
+| Builder class                   | Delivery stream                       | Distinguishing anomaly                                                                  |
+| ------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------- |
+| Galactic (in-plane transmitter) | Galactic single-pulse / RRAT catalogs | Copy-exact morphology in a stochastic population; hostless if misfiled as extragalactic |
+| Extragalactic (Local Volume)    | Genuine FRB repeater catalog, with host | Tags only: exact copies, strict periodicity, phase structure                            |
+
+The corresponding search prior is spatial: extragalactic beacons are **coincident with nearby massive galaxies**. Sort the repeater sample by host distance, nearest first. The first target is the M81 globular-cluster repeater FRB 20200120E at $3.6\,\mathrm{Mpc}$—the nearest extragalactic repeater, environmentally anomalous, with baseband captures held by multiple observatories. This is a priority test target under a stated hypothesis, not a candidate claim: magnetar-in-old-population models for the source remain viable.
+
+### 16.5 Margin erosion and confirmation reweighting
+
+At extragalactic distances, signal-to-noise margin costs quadratically in distance, so the builder transmits nearer threshold. Multi-instrument simultaneity—a design driver in the galactic case (Section 4.5)—weakens accordingly, and within-capture self-confirmation, the repetition ladder's bottom rungs, carries more of the confirmation burden. This is a scale-dependent reweighting of the existing confirmation hierarchy, not a new mechanism.
+
+### 16.6 The collapsed discovery/message architecture
+
+Energy accounting kills the galactic-style two-layer design at intergalactic scale. The pulsed discovery layer runs at a duty cycle of order $10^{-6}$ per target; even a continuous message beam $30\,\mathrm{dB}$ weaker per target costs $\sim 10^3$ times the discovery layer's energy ($10^{-3}$ versus $10^{-6}$ in power times duty). Continuous message beams are what blows up—not the bursts.
+
+The dominant option is to **collapse both layers into one physical signal with layered decodability**:
+
+- The chirp implementation already sweeps a coherent carrier for $\sim 1\,\mathrm{s}$ per burst. **Phase-modulating that carrier is invisible in intensity data**—filterbanks discard phase—so triggering, morphology, and pipeline passage are unaffected; but it is a full data channel in voltage data. The capacity $B\,T\log_2(1+\mathrm{SNR})$ on the instantaneous bandwidth over the sweep duration gives $\sim 10^4$–$10^6$ bits per burst at **zero additional energy**.
+- The phase modulation double-duties as the strongest artificiality tag in the design: deterministic, repeated, structured phase across bursts is unforgeable by plasma.
+- A receiver-behavior invariant justifies relying on voltage capture, with the same epistemic status as the dedispersion-trigger argument of Section 4.4: any civilization that finds a repeating burst source commits voltage-capture campaigns to it, because coherent data is how burst microphysics is done. **Repeaters attract baseband recording.**
+- The layers stratify within the same bursts: (i) intensity-domain burst parameters—sub-burst spacings, amplitude patterns, polarization angles—carry tens of bits per event, readable by any wide-field system: the bootstrap layer ("artificial, periodic, look closer"); (ii) phase-domain modulation is the message proper, kilobits to megabits per burst for voltage recorders; (iii) fountain-style coding across bursts lets any sufficient subset decode, robust to each recipient's sparse exposure sampling.
+- Dedicated high-power message beams are reserved for the home galaxy, where margin is free (Section 16.3).
+
+The lighthouse and the library are the same photons.
+
+---
+
+## 17. Main conclusions
 
 1. The relevant optimization target is expected confirmed recipients, not raw detectability or transmitted information rate.
 2. Wide-field radio transient monitors are the dominant plausible receiver class for brief scanning beacons.
 3. The strongest discovery-layer candidate is a tagged dispersed packet in the physics-anchored $0.5$–$2\,\mathrm{GHz}$ window, occupying an octave or more of bandwidth, with dispersion dominated by the real interstellar medium, millisecond components, and two or more exact channel-commutative copies within tens of milliseconds.
 4. The main trigger should look ordinary. Artificiality should be carried by exact transformed relationships that survive archiving but are not standard pipeline features, restricted to transformations that commute with the propagation channel.
-5. Sightline geometry makes the event read as Galactic for most recipient geometries regardless of design intent, so RRAT-like phenomenology is the delivery channel and the Galactic single-pulse streams are the primary search region.
+5. For the galactic (in-plane) builder class, sightline geometry makes the event read as Galactic for most recipient geometries regardless of design intent, so RRAT-like phenomenology is the delivery channel and the Galactic single-pulse streams are the primary search region for that class; the extragalactic class points instead at the genuine-FRB repeater catalog (conclusion 13).
 6. Repetition should be distributed across a ladder of timescales. Within-capture copies make a single retained event self-confirming, removing receiver session structure and attention span from the critical path; paired passes and sweep recurrence carry the scanner-model evidence. Long revisit times make current non-detections weak evidence.
 7. Signals that would have been spectacular in standard intensity products deserve some downweighting, but only after actual exposure, trigger, and retention probabilities are included; recognition as a repeater does not count as recognition of artificiality.
 8. The best archival-search region consists of signals likely to have been retained but unlikely to have been tested for their artificiality-bearing statistic.
@@ -949,6 +1031,9 @@ The message layer can be more flexible. Once the discovery event has triggered a
 10. A broad search for self-similar dispersed transients is preferable to a narrow search for one human-chosen mathematical sequence, with channel-commutative transformation families searched first.
 11. Transmitter cost should shape the rational-builder prior: the chirp implementation reduces peak power by orders of magnitude relative to a true impulse and supplies a voltage-domain tag for free, so chirp-implemented designs deserve higher weight.
 12. Injection and recovery are essential. Without them, neither candidate ranking nor null-result interpretation is reliable.
+13. Per-recipient energy cost is distance-invariant out to a gain-dependent beam-filling horizon at tens of megaparsecs, while the per-pointing capital threshold grows as $d^2$: intergalactic capability is an entry barrier, not a rate cost, and a builder above threshold covers the Local Volume at flat per-recipient economics while still sweeping the home galaxy as a premium tier.
+14. The two builder classes map onto different retention streams—galactic builders onto Galactic single-pulse and RRAT streams, extragalactic builders onto the genuine-FRB repeater catalog with visible hosts—and identical tag statistics search both. The nearest-host repeaters, beginning with the M81 globular-cluster repeater, are the priority test targets under the extragalactic hypothesis.
+15. At intergalactic scale the discovery and message layers collapse into one phase-modulated chirped signal: the message rides in carrier phase at zero additional energy, invisible to intensity pipelines but recoverable from baseband. The corresponding archival test is a phase-residual structure search in voltage archives recorded for scattering studies.
 
 The practical search thesis is therefore:
 
@@ -1015,6 +1100,16 @@ A chirped narrowband carrier swept along the dispersion track deposits the same 
 The chirp implementation is therefore strongly favored on cost, and it supplies a deterministic voltage-domain tag at no additional expense: the emitted field either replicates the exact cold-plasma phase transfer function or deliberately does not, and either choice is testable in coherently captured baseband data. Design families whose peak-power requirements are orders of magnitude higher without compensating gains in expected recipients should be down-weighted in $\pi_{\mathrm{builder}}$.
 
 Note also the interaction with Section 4.4: because synthetic dispersion is transmitted as sweep duration, the chirp's dwell cost is what makes low-band pre-chirp expensive; siting the transmitter in the Galactic plane transfers that cost to the interstellar medium.
+
+**Intergalactic scalings (Section 16).** The threshold effective isotropic radiated power keeps the $d^2$ scaling above: an M31 pointing at $780\,\mathrm{kpc}$ requires $\sim 6\times10^3$ times the $10\,\mathrm{kpc}$ figure—of order $10^{28}\,\mathrm{W}$ peak as a true impulse, reduced to tens of petawatts of transmitter power by the chirp's $B/\Delta\nu$ factor at plausible gains—and Virgo-distance pointings require $\sim 10^6$ times the galactic figure. Against this per-pointing threshold stands the distance-invariant per-recipient cost: with target stellar column density $\Sigma$ and beam solid angle $\Omega$, the cost per star delivered is
+
+$$
+\frac{4\pi S_{\min}}{\Sigma\,\Omega},
+$$
+
+independent of $d$ while the footprint $\Omega d^2$ remains smaller than the target galaxy. The beam-filling horizon where this fails is gain-dependent: at gain $10^8$ the footprint spans $\sim 30\,\mathrm{kpc}$ near $\sim 80\,\mathrm{Mpc}$, beyond which per-recipient cost grows as $d^2$.
+
+Duty-cycle accounting drives the collapsed architecture of Section 16.6: the pulsed discovery layer runs at power-times-duty of order $10^{-6}$ per target, while even a $30\,\mathrm{dB}$ weaker continuous message beam costs of order $10^{-3}$—a factor $\sim 10^3$ more energy. Phase modulation of the chirped carrier, by contrast, adds information at zero marginal energy: the carrier is already coherent for the $\sim 1\,\mathrm{s}$ sweep, phase is discarded by intensity products so trigger behavior is unchanged, and the channel capacity $B\,T\log_2(1+\mathrm{SNR})$ on the instantaneous bandwidth yields $\sim 10^4$–$10^6$ bits per burst in voltage data.
 
 ## Appendix D: primary reference
 

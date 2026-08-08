@@ -1,6 +1,6 @@
 # Phase 0 — Literature Review and Novelty Audit
 
-_Working audit completed 2026-08-07. Audits the four project-killer claims from [project_plan.md](../notes/project_plan.md) Phase 0 against the published literature (searches run across arXiv, ADS, and journals; the CHIME/FRB verification below is from full LaTeX sources, not abstracts). This is a targeted novelty audit, not yet a reproducible systematic review: search strings, screening criteria, and a complete bibliography must be recorded before publication-facing novelty claims are frozen._
+_Working audit completed 2026-08-07. Audits the four project-killer claims from [project_plan.md](../notes/project_plan.md) Phase 0 against the published literature (searches run across arXiv, ADS, and journals; the CHIME/FRB verification below is from full LaTeX sources, not abstracts), plus — added the same day after the rev3 thesis update — a fifth item covering the H4 phase-residual search. This is a targeted novelty audit, not yet a reproducible systematic review: search strings, screening criteria, and a complete bibliography must be recorded before publication-facing novelty claims are frozen._
 
 ## Consolidated verdict: **CONDITIONAL GO**
 
@@ -12,8 +12,9 @@ The scientific program remains viable, but the claims do not all survive unchang
 | 2. Pulsar single-pulse copy-exactness | No population-level anomaly statistic was identified; the stochasticity premise is supported; known fat-tail mechanisms must be built into the null. |
 | 3. Lensing-echo / voltage-autocorrelation coverage | The simple delayed-copy region has published coverage with measurable bounds. No sensitive transformed-repetition, cyclostationarity, or voltage-determinism search was identified. |
 | 4. Public data inventory | Phase 2–3 have substantial public inputs. Phase 1 burst epochs are public, but the timestamped observing windows required by the proposed likelihood remain unverified. |
+| 5. Phase-residual structure search (H4) | No prior search of coherently dedispersed FRB voltage phase for repeated or deterministic modulation was identified; nearest prior art is intensity-domain (Majid 2021 ACF microstructure) and phase-as-veto (Kader 2025). Public-data caveat: the thesis first target has no public voltages. |
 
-No hypothesis needs to be abandoned. However, the H1 novelty language—and potentially its confirmatory source sample—must be re-scoped, and Phase 1 cannot begin as a confirmatory analysis until its observing-window verification and statistical-specification gates are closed (both now specified in [prereg_h1.md](prereg_h1.md)). Required amendments to the pre-registration are listed in Section 6.
+No hypothesis needs to be abandoned. However, the H1 novelty language—and potentially its confirmatory source sample—must be re-scoped, and Phase 1 cannot begin as a confirmatory analysis until its observing-window verification and statistical-specification gates are closed (both now specified in [prereg_h1.md](prereg_h1.md)). Required amendments to the pre-registration are listed in Section 7.
 
 ---
 
@@ -107,11 +108,33 @@ The only systematic voltage-coherent FRB echo-search program identified in this 
 
 ---
 
-## 5. Bonus finding: the plan's ordering is viable, subject to the data gate
+## 5. Phase-residual structure search prior art (H4; added 2026-08-07 for the rev3 thesis)
+
+**Claim audited:** no one has searched coherently dedispersed FRB voltage/carrier phase for repeated modulation patterns, deterministic phase structure, or communication-like coding (research note rev3 Sections 8.6 and 16.6; [preregistration.md](preregistration.md) Section 2.4).
+
+**Finding: supported — no phase-domain structure search was identified; the nearest prior art is intensity-domain or phase-as-veto.**
+
+Complete pass over every voltage-data paper on FRB 20200120E, the H4 first target (all verified from full texts or arXiv sources, 2026-08-07):
+
+- **Majid et al. 2021** (DSN DSS-63, 62.5 ns baseband): coherent dedispersion, matched filtering to 62.5 ns, profiles resolving components ≲ 100 ns, L/R circular profiles, dynamic spectra, and an **intensity autocorrelation** yielding ~2.3 µs quasi-periodic microstructure — the nearest prior art, and intensity-domain only.
+- **Kirsten et al. 2022** (EVN voltages): voltage→filterbank burst search; SFXC coherent-dedispersion **correlation** for astrometry. No phase-structure analysis.
+- **Nimmo et al. 2022** (Nat. Astron.): profiles to 31.25 ns, intensity ACFs and power spectra, brightness temperatures, full polarimetry (Faraday spectra, RM, PA). All intensity/Stokes-domain.
+- **Nimmo et al. 2023** (MNRAS burst storm, 60 bursts): morphology, structure-resolved DM, energy and wait-time distributions, **TOA-level periodicity (null)** — arrival-time periodicity, not carrier phase.
+- **Pearlman et al. 2025** (Nat. Astron.): coherent-dedispersion profiles to 31.25 ns, radio–X-ray coincidence; periodicity searched on X-ray photons only.
+
+General FRB voltage prior art (extending audit item 3): the Leung/Kader 2022 delayed-copy autocorrelation and the Kader et al. 2025 phase-coherence discriminator use voltage phase **as a propagation veto** (power-correlated but phase-incoherent ⇒ scintillation), not as a search space for deliberate structure; cyclostationarity has no demonstrated FRB sensitivity (Price et al. 2019 self-reported); no determinism tests on the field were located; cyclic spectroscopy is mature for pulsars (Demorest 2011) with no FRB application identified.
+
+**SETI prior art on the first target:** no published SETI/technosignature analysis of FRB 20200120E or M81 was located (targeted searches plus a BL Open Data Archive API check — no matching target). Closest: Gajjar et al. 2021 (RNAAS), a GBT 4–8 GHz burst search by BL-affiliated authors, framed purely as FRB science, null, no data release.
+
+**Scoped H4 claim (use this wording):** this audit identified no prior search of coherently dedispersed FRB voltage phase for repeated or deterministic modulation structure. Must-cite-and-distinguish: Kader et al. 2025 (phase coherence as veto), Majid et al. 2021 (intensity-ACF quasi-periodicity), Leung/Kader 2022 (delayed-copy boundary), Demorest 2011 (pulsar cyclic spectroscopy).
+
+**Data caveat feeding the plan:** the H4 first target under the rev3 spatial prior has **no public voltage data** — all FRB 20200120E voltage sets (PRECISE stations, Effelsberg DADA, DSN, CHIME internal) are request-only or internal ([data_product_matrix.md](data_product_matrix.md) Section 8). The public-scope H4 first target is therefore FRB 20180916B (CHIME Baseband Catalog 1 + LOFAR LTA), with the 20200120E requests deferred to the follow-up.
+
+## 6. Bonus finding: the plan's ordering is viable, subject to the data gate
 
 Two audit outcomes support the plan's sequencing logic, subject to a data-access gate. First, Catalog 2 provides the modern burst sample and this audit identified no CHIME/FRB periodicity analysis of that catalog, but a confirmatory Phase 1 likelihood still requires time-resolved observing windows rather than only cumulative maps. Second, the fat-tail mechanisms found in audit item 2 are exactly what the Phase 2 pulsar-calibration gate was designed to catch; the audit converts that gate from a hypothetical into a concrete checklist (scintillation conditioning, IRF imprinting, carbon-copy pairs).
 
-## 6. Required pre-registration amendments
+## 7. Required pre-registration amendments
 
 1. **H1 scoping:** frame as generative-model comparison, not a first-ever periodicity search; add the must-cite list; explicitly include the long-baseline, exposure-folded sub-day regime not identified in prior work, with alias-aware treatment.
 2. **H2 null conditioning:** condition the copy-exactness null on pair time-lag relative to the scintillation timescale, S/N, and effective resolution; compute on spectrum-marginalized (and where possible descattered) waveforms; add the FRB 20240114A carbon-copy population and B1937+21/Crab GP data to the calibration ladder as propagation-imprint controls.
@@ -120,11 +143,14 @@ Two audit outcomes support the plan's sequencing logic, subject to a data-access
 
 Items 1–4 are reflected in the current preregistration drafts. The remaining freeze decisions are enumerated in the freeze checklists of [prereg_h1.md](prereg_h1.md) and [preregistration.md](preregistration.md).
 
-## 7. Watch items
+## 8. Watch items
 
 - The FRB 20240114A carbon-copy literature (arXiv:2602.16409 vs 2607.02939) — closest active work to our copy-exactness statistic; monitor for a formalized similarity statistic.
-- CHIME/FRB Catalog 2 baseband companion paper (announced) — will multiply the public voltage sample.
+- CHIME/FRB Catalog 2 baseband companion paper (announced) — will multiply the public voltage sample, and could add nearby-host repeater voltages.
 - Aznam-style composite periodograms—the community is moving toward exposure-folded methods; monitor whether the combined model-comparison, paired-pass, and long-baseline sub-day space remains unoccupied.
+- Any public release of FRB 20200120E voltage data (Effelsberg DADA "on reasonable request," PRECISE VDIF/Mark5B, DSN baseband, CHIME internal baseband) — would promote the H4 first target from follow-up to in-scope.
+- Phase-domain FRB analyses generally (e.g., cyclic spectroscopy applied to FRBs, or any carrier-phase modulation search) — would occupy the H4 novelty space; monitor before each submission.
+- FRB 20240210A (~105 Mpc, currently non-repeating) and FRB 20240619D (host unknown, possibly nearby) — either could change the host-distance table (manifest Section 5).
 
 ## Appendix: search-protocol record (reproducibility appendix)
 
@@ -147,6 +173,8 @@ Single-pulse statistics: Rickett 1975 · Jenet et al. 1998 · Cordes 1976 (ApJ 2
 Propagation/copy mechanisms: FRB 20240114A carbon-copy debate (arXiv:2602.16409; arXiv:2607.02939) · Lin et al. 2023 (arXiv:2305.13274) · B2217+47 echoes (arXiv:1802.03473) · Nimmo et al. 2022.
 
 Echo/voltage searches: Leung et al. 2022 + Kader et al. 2022 (PRD 106, 043017/043016) · Kader et al. 2025 (arXiv:2512.11969) · Wucknitz, Spitler & Pen 2021 · Pastor-Marazuela 2024/2025 review · Sammons et al. 2020 · Chang et al. 2024 · Price et al. 2019 (FRB 180301) · Demorest 2011.
+
+FRB 20200120E / H4 prior art (added 2026-08-07): Bhardwaj et al. 2021 (arXiv:2103.01295) · Majid et al. 2021 (arXiv:2105.10987) · Kirsten et al. 2022 (arXiv:2105.11445) · Nimmo et al. 2022 (arXiv:2105.11446) · Nimmo et al. 2023 (arXiv:2206.03759) · Pearlman et al. 2025 (arXiv:2308.10930) · Zhang et al. 2024 (arXiv:2310.00908) · Trudu et al. 2022 (arXiv:2204.05050) · Gajjar et al. 2021 (arXiv:2107.09445).
 
 **[TODO before submission]** complete this into a full bibliography with stable DOI/arXiv links for every entry, plus per-paper screening disposition (included/excluded and why).
 

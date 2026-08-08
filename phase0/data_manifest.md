@@ -1,6 +1,6 @@
 # Data Manifest
 
-_Freeze artifact required by [prereg_h1.md](prereg_h1.md) Section 8 and [preregistration.md](preregistration.md) Section 3. Nothing in this manifest is frozen until the corresponding tag (`prereg-h1-v1.0` for Section 1–2, `prereg-h2h3-v1.0` for Sections 3–4) exists. Fields marked **[pending]** must be completed — by downloading and hashing the file, or by schema inspection under the pre-freeze inspection policy — before the tag is created._
+_Freeze artifact required by [prereg_h1.md](prereg_h1.md) Section 8 and [preregistration.md](preregistration.md) Section 3. Nothing in this manifest is frozen until the corresponding tag (`prereg-h1-v1.0` for Section 1–2, `prereg-h2h3h4-v1.0` for Sections 3–5) exists. Fields marked **[pending]** must be completed — by downloading and hashing the file, or by schema inspection under the pre-freeze inspection policy — before the tag is created._
 
 _Scope: public data only. Collaboration-gated products are excluded from this manifest entirely; they are listed for planning purposes in [data_product_matrix.md](data_product_matrix.md) and deferred to the post-project follow-up phase of [../notes/project_plan.md](../notes/project_plan.md)._
 
@@ -91,6 +91,19 @@ Live-web verification of all candidates was performed by parallel research passe
 
 _Verification note: five source–campaign pairs are verified (1.1b, 1.2a, 1.2c, 1.3, 1.5), so the freeze-pause condition of prereg_h1 Section 3.2 is not triggered. All sample decisions are resolved; what remains for freeze is mechanical (downloads, checksums, extraction scripts, software pinning)._
 
+_Addendum (2026-08-07, rev3 nearest-host pass): a sixth pair was verified after the thesis update introduced the host-distance prior — FRB 20200120E Effelsberg (Section 1.7). Six pairs total._
+
+### 1.7 FRB 20200120E — Effelsberg monitoring campaign (verification 2026-08-07, rev3 nearest-host pass)
+
+- Motivation: nearest-host repeater (M81 globular cluster, 3.6 Mpc) — the first target under the rev3 extragalactic spatial prior (research note Section 16.4). Verified by a live pass over all published campaigns for this source; every alternative fails S1 or S2 (CHIME: 4 bursts, no session log, source explicitly excluded from the 2023/2026 repeater catalogs "reported separately"; DSN Majid 2021: 1 burst, 1 session; Haoping Zhang 2024: 1 burst, text-only epochs; Northern Cross: 0 bursts, cumulative exposure only; FAST: geometrically impossible at dec ≈ +68.8°, outside FAST's −14°…+66° range).
+- Papers: Nimmo et al. 2023, MNRAS 520, 2281 (arXiv:2206.03759; "burst storm," 60 bursts) — primary; Kirsten et al. 2022, Nature 602, 585 (arXiv:2105.11445; PRECISE-era, B1–B5, 15-run log); Pearlman et al. 2024, Nature Astronomy (arXiv:2308.10930; refined TOAs B1–B9, best-format log).
+- Observing log: **meets S1 content requirements** — Nimmo Table `tab:observations`: 42 Effelsberg sessions, start MJD (topocentric) + duration (hr) + backend + burst count, **all non-detection sessions included**, MJD 59265.708–59693.655 (~428 d). Complete LaTeX table in the arXiv source (no CSV/Zenodo version exists); frozen extraction script + hash required.
+- Burst table: Nimmo longtable `tab:burst_properties`: **60 TOAs, barycentric TDB at infinite frequency**, DM 87.7527, VLBI position; LaTeX-only, extraction script required. Kirsten adds the same B1–B5 at PRECISE stations; Pearlman `tab:radio_burst_properties` gives **refined re-barycentred B1–B9** (the Kirsten/Nimmo-2022 B1–B5 TOAs used a superseded position, ~3–4 ms error — immaterial at σ_v ≥ 60 s visit scales but the Pearlman values are adopted where duplicated).
+- **Frozen handling required (recorded now, decided before tag):** (a) session-window construction — Nimmo's "duration" is not guaranteed on-source time for PRECISE-era runs (interleaved calibrators); where the Pearlman log (23 sessions with UTC start AND end + on-source exposure, 2020-12→2021-05) overlaps, Pearlman's on-source windows take precedence; later sessions use Nimmo start+duration with the overstated-exposure caveat noted; the Kirsten PR163A stop = Nimmo start inconsistency (MJD 59347.625) resolved at extraction time and documented. (b) Cross-table burst deduplication by published burst ID (B1–B5/B1–B9 appear in up to three tables). (c) Kirsten's four non-Effelsberg PRECISE runs (PR160A/162A/164A/165A) enter W(t) as separate-station windows only if their station and on-source semantics can be pinned; otherwise dropped (conservative).
+- S1: pass (with the frozen construction rule). S2: 60 events — pass; **statistical-power caveat: 53/60 bursts lie within one ~2 h storm session on 2022-01-14**, so most events constrain only within-session structure; recorded for the null-interpretation section, not a sample-eligibility issue. S3: 42 sessions, ~428 d — pass. S4: no published activity-window period (periodicity searches on published TOAs are null) — pass. S5: mas-scale VLBI localization — pass.
+- Supporting deposits (not H1 inputs): Zenodo 10.5281/zenodo.7555187 — 16.6 GB Stokes-I 5.12 μs filterbanks for all 60 bursts, and Zenodo 10.5281/zenodo.5666802 — Nimmo 2022 products down to 31.25 ns (both intensity-domain: H2-relevant at top host-distance priority, **not** H4 — the source has no public voltage data; product matrix Section 8); Zenodo 10.5281/zenodo.13359005 — Pearlman dynamic spectra (npy/npz).
+- Status: **verified candidate** (pending extraction scripts, checksums, and the frozen session-window construction rule).
+
 ### 1.6 Frozen files and checksums (downloaded and verified 2026-08-07)
 
 All files below are stored under `data/raw/` (gitignored; re-fetchable from the recorded URLs) and were verified against publisher-side checksums where the repository publishes them (Zenodo MD5, ScienceDB MD5 — all matched). Session logs extracted from these inputs live in `phase1/windows/` with `PROVENANCE.json` recording input/output SHA-256 pairs, produced by the frozen script `scripts/extract_session_logs.py`.
@@ -137,7 +150,7 @@ All files below are stored under `data/raw/` (gitignored; re-fetchable from the 
 - **Cruces et al. 2021 (arXiv:2008.03461) tables extracted 2026-08-07** (tarball SHA-256 `0c4b194b…a1a6c2bb4`): `control_cruces121102_sessions.csv` — all 33 tabulated sessions (EFF/AO/GBT, UTC start + duration + event count, 2017-09 → 2020-06; the paper's "34 epochs" adds earlier published Hardy/Houben epochs not tabulated); `control_cruces121102_bursts.csv` — 36 Effelsberg burst MJDs. Sufficient for the ~157–161 d M1 recovery test; the Braga 2025 compilation is no longer needed.
 - Li et al. 2021 FAST 1,652-burst table: downloaded and verified — `FRB121102_1652burstList.csv` (ScienceDB 10.11922/sciencedb.01092, CC0), MD5 matches deposit, SHA-256 `6a38c154…35a6ef87`. Single ~47-day campaign; short-baseline recovery checks.
 
-## 3. H2/H3 calibration ladder (draft; frozen at `prereg-h2h3-v1.0`)
+## 3. H2/H3/H4 calibration ladder (draft; frozen at `prereg-h2h3h4-v1.0`)
 
 Per preregistration Section 6. Every source/event used here is permanently excluded from the confirmatory H2 sample.
 
@@ -150,7 +163,7 @@ Per preregistration Section 6. Every source/event used here is permanently exclu
 | FAST FRB 20201124A atlas | repeating-FRB development control | ScienceDB 10.57760/sciencedb.j00113.00076, **CC-BY-NC-ND** (license constraint on redistribution/figures) | **[pending]** |
 | FRB 20240114A published burst sets (carbon-copy pairs) | documented near-copy fat tail | per arXiv:2602.16409 / 2607.02939 releases | **[pending]** |
 
-## 4. H2/H3 confirmatory archives (draft; frozen at `prereg-h2h3-v1.0`)
+## 4. H2/H3/H4 confirmatory archives (draft; frozen at `prereg-h2h3h4-v1.0`)
 
 | Archive | Streams | Access | Fields |
 | --- | --- | --- | --- |
@@ -161,14 +174,27 @@ Per preregistration Section 6. Every source/event used here is permanently exclu
 | CRAFT HTR DR1 (35 FRBs, IQUV, re-binnable) | FRB high-time-resolution | DOI 10.25917/1rg2-c612, CC-BY | **[pending]** |
 | CHIME/FRB Baseband Catalog 1 (140 FRBs) | Phase 4 public-baseband pilot | CANFAR 10.11570/23.0029 (known gap: ~10 repeater-burst products missing) | **[pending]** |
 
-## 5. Software environment (pinned at each freeze)
+## 5. Host-distance priority table (rev3 extragalactic prior; frozen at `prereg-h2h3h4-v1.0`)
+
+_The frozen sub-priority input for the FRB streams (preregistration Section 3 item 3; research note Sections 8.2 and 16.4): repeaters localized to hosts, ordered by distance, nearest first. Compiled from a live census 2026-08-07 (all localization claims verified against the cited papers). Only three confirmed repeaters are localized within 200 Mpc. Sources beyond the nominal ~80 Mpc beam-filling horizon remain in scope — the horizon is gain-dependent — with the closer expectation noted in interpretation._
+
+| Rank | FRB | Host | Distance | Localization ref | Public voltage? |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 20200120E | M81 globular cluster | 3.6 Mpc | Kirsten et al. 2022 (Nature 602, 585) | Partial — see Section 1.7 note and the product matrix |
+| 2 | 20181030A | NGC 3252 | ~20 Mpc | Bhardwaj et al. 2021 (ApJL 919, L24) | No (CHIME-internal baseband only; absent from the public baseband catalog, verified) |
+| 3 | 20180916B | SDSS J015800.28+654253.0 (z = 0.0337) | 149 Mpc | Marcote et al. 2020 (Nature 577, 190) | **Yes** — CHIME Baseband Catalog 1 includes its bursts (DOI 10.11570/23.0029, verified); LOFAR complex voltages via LTA [P] |
+| 4+ | 20200223B (~270 Mpc) · 20190303A (~290) · 20180814A (~310) · 20220912A (~360) · 20201124A (~420–450) · 20190110C (~590) · 20240114A (~630) · 20240209A (~680) · 20121102A (~970) | — | beyond 200 Mpc | Ibik 2024; Michilli 2023; Ravi 2023; Fong 2021; CHIME/KKO 2025; Tendulkar 2017 | per product matrix |
+
+Watch list (checked and excluded 2026-08-07, re-verify at each freeze): FRB 20240210A (Seyfert host at ~105 Mpc — currently a non-repeater; enters at rank 3 if it ever repeats); FRB 20250316A (NGC 4141, ~40 Mpc — one-off despite deep exposure); FRB 20240619D (hyperactive MeerTRAP repeater, host unknown, z estimated 0.042–0.240 — the top unresolved candidate for a nearby slot).
+
+## 6. Software environment (pinned at each freeze)
 
 - Working environment (recorded 2026-08-07, finalized at tag): Python 3.12.2, numpy 2.5.1, scipy 1.18.0, astropy 8.0.1 — full transitive lock in `phase0/requirements-lock.txt` (`.venv` local, gitignored).
 - Repository commit: **[pending at tag]**
 - Solar-system ephemeris: DE440, file hash **[pending at tag — recorded when the barycentric window conversion is wired into the full-scale run]**
 - Observatory coordinates: astropy sites registry version **[pending at tag]**
 
-## 6. Pre-freeze inspection log
+## 7. Pre-freeze inspection log
 
 _Every file opened before the relevant tag is listed here with date, purpose, and the policy clause permitting it (schema/availability verification; positive-control designation; calibration/development-control designation). Confirmatory target data may not appear in this log._
 
@@ -183,3 +209,4 @@ _Every file opened before the relevant tag is listed here with date, purpose, an
 | 2026-08-07 | ApJ MRTs `apjadfecet2_mrt.txt` (66-session log), `apjadfecet3_mrt.txt` (155-burst table); China-VO `archives.zip` file listing (TMRT 20240114A) | S1/S2 verification: session count/sums, burst count, per-session burst totals, deposit accessibility | Log inspection and availability/schema verification; burst-table row count only; no timing-structure statistics computed |
 | 2026-08-07 | CSIRO DAP: 196 collection detail records, 77 PX127 `.log` files and file listings, one ranged PSRFITS header read (Parkes 20240114A) | DAP-reconstruction feasibility: scan dates/times, target paths, config verification | Observatory/session metadata, not burst data; campaign subsequently **excluded** from confirmatory sample |
 | 2026-08-07 | Freeze downloads (Section 1.6): burst tables and session logs for the five verified campaigns; CSV header lines viewed; session-log extraction run with row-count verification | Checksum recording and extraction-script validation required by the freeze checklist | Download + hash does not examine content; inspection limited to header/schema lines and published session logs; no burst-time statistics computed |
+| 2026-08-07 | arXiv LaTeX sources 2206.03759 (Nimmo observation + burst tables), 2105.11445 (Kirsten run + burst tables), 2308.10930 (Pearlman radio-obs + burst tables), 2103.01295, 2105.10987, 2310.00908; Zenodo 7555187 / 13359005 file listings (FRB 20200120E) | Rev3 nearest-host S1–S5 verification: session counts/spans, burst counts, time-standard footnotes, cross-table TOA consistency (duplicate identification and the PR163A start/stop inconsistency) | Availability/schema verification and the S2/S3 counts required by prereg_h1 §3.2; duplicate/consistency checks limited to identification; no periodicity, clustering, or timing-structure statistics computed |

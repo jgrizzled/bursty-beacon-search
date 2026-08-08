@@ -8,7 +8,7 @@ _Scope decision (2026-08-07): **this project is public-data-only.** Everything r
 
 1. **Public data only; collaboration is the follow-up paper.** Candidate graveyards, request-only baseband, proprietary archives, time-resolved CHIME exposure products, pipeline-level injection, and live-trigger deployment are all collaboration-gated and therefore out of scope for this project. The consequence is accepted explicitly: the H1 confirmatory sample is restricted to campaigns with complete published observing logs, and Phase 3 nulls are reported with cutout-level (not pipeline-level) selection caveats.
 2. **Cheapest high-value tests first.** The exposure-folded scanner-model test runs on published burst tables plus published per-session observing logs. Verifying that those logs exist at the required schema — not merely cumulative exposure maps — is the Phase 1 data gate, enforced in [prereg_h1.md](../phase0/prereg_h1.md).
-3. **Methodological credibility over speed.** The biggest failure mode is not missing a signal — it is producing an unconvincing candidate. A broad transformation search over thousands of events is a trials-factor minefield (note Section 10.7). Statistics and transformation families are frozen by pre-registration *before* looking at data. H1 freezes separately (`prereg-h1-v1.0`) from H2/H3 (`prereg-h2h3-v1.0`) so Phase 1 is not blocked on morphology decisions.
+3. **Methodological credibility over speed.** The biggest failure mode is not missing a signal — it is producing an unconvincing candidate. A broad transformation search over thousands of events is a trials-factor minefield (note Section 10.7). Statistics and transformation families are frozen by pre-registration *before* looking at data. H1 freezes separately (`prereg-h1-v1.0`) from H2/H3/H4 (`prereg-h2h3h4-v1.0`) so Phase 1 is not blocked on morphology decisions.
 4. **Injection-recovery splits into two different activities.**
    - *Cutout-level injection* (synthetic tagged packets in real noise cutouts) is cheap, sets detection thresholds, validates segmentation code, and is a prerequisite — built into the toolkit from day one.
    - *Pipeline-level injection* (estimating per-instrument trigger and save probabilities) requires collaborator pipelines and is deferred to the follow-up. Until then, null results are stated as constraints conditional on the published selection functions, with the caveat quantified where the CHIME public injections release permits.
@@ -33,7 +33,7 @@ Remaining Phase 0 work:
 
 ## Phase 1 — The repeater timing test (first publishable result)
 
-_Public-data scope: confirmatory sample restricted to repeater campaigns with complete published observing-session logs (FAST/Parkes hyperactive-repeater campaigns, pending manifest verification); known periodic repeaters (20180916B, 121102) serve as positive controls. The full CHIME Catalog 2 83-repeater analysis is deferred to the follow-up, where time-resolved exposure can be requested._
+_Public-data scope: confirmatory sample restricted to repeater campaigns with complete published observing-session logs — six source–campaign pairs verified (manifest Section 1): the hyperactive repeaters 20220912A (Nançay, AstroFlash), 20240114A (FAST, TMRT), 20201124A (FAST Sep–Oct), and, under the rev3 nearest-host prior, 20200120E (Effelsberg, M81 at 3.6 Mpc — the thesis-preferred target). Known periodic repeaters (20180916B, 121102) serve as positive controls. The hyperactive sources sit at ~350–600 Mpc, beyond the rev3 nominal beam-filling horizon; they remain confirmatory (the horizon is gain-dependent) with the closer expectation stated in interpretation. The full CHIME Catalog 2 83-repeater analysis is deferred to the follow-up, where time-resolved exposure can be requested._
 
 Implement the window-function-aware likelihood and run the frozen M0–M5 comparison of [prereg_h1.md](../phase0/prereg_h1.md):
 
@@ -72,11 +72,11 @@ Build on public dynamic spectra:
 
 ## Phase 3 — First archival sweep (public data)
 
-Run the frozen, calibrated statistics over public archives, with Galactic-dispersion streams weighted highest per the geometry argument of note Section 4.4:
+Run the frozen, calibrated statistics over public archives. Under the rev3 two-builder mapping (note Section 16.4) the two delivery streams are co-primary: Galactic-dispersion streams for the galactic builder class (note Section 4.4), the genuine-FRB repeater catalog for the extragalactic class:
 
-1. Galactic single-pulse, pulsar, and RRAT streams (primary region — MeerTRAP Galactic-transient release first);
-2. public total-intensity FRB dynamic spectra, including full cutout extents (CHIME Cat 1/2 waterfalls, DSA-110, CRAFT HTR);
-3. cross-observatory time-coincidence matching of public candidate lists (same-event simultaneity, not only recurrence).
+1. Galactic single-pulse, pulsar, and RRAT streams (galactic-builder primary region — MeerTRAP Galactic-transient release first);
+2. public total-intensity FRB dynamic spectra, including full cutout extents (CHIME Cat 1/2 waterfalls, DSA-110, CRAFT HTR), with repeaters localized to nearby hosts searched first, ordered by host distance (frozen host-distance table in the manifest; sources beyond the nominal ~80 Mpc beam-filling horizon stay in scope — the horizon is gain-dependent — with the closer expectation noted in any interpretation);
+3. cross-observatory time-coincidence matching of public candidate lists (same-event simultaneity, not only recurrence; per note Section 16.5 this weight is scale-dependent and serves the galactic class primarily).
 
 **Trials-factor discipline:** held-out validation — search half the archive, confirm on the other half (deterministic event-hash split per the preregistration). Report local and global false-alarm probabilities. Scrambled-data controls and matched natural populations carry the significance burden at this stage.
 
@@ -86,18 +86,19 @@ Run the frozen, calibrated statistics over public archives, with Galactic-disper
 
 ---
 
-## Phase 4 — Public-baseband pilot
+## Phase 4 — Public-baseband pilot, headlined by the phase-residual search
 
-_The public-data subset of the note's Phase C. No requests, no collaborations._
+_The public-data subset of the note's Phase C, plus the rev3 phase-residual (H4) search of note Sections 8.6 and 16.6. No requests, no collaborations._
 
 Apply voltage- and polarization-domain tests to the public voltage sets identified in the data-product matrix:
 
+- **Phase-residual structure search (H4)** — the rev3 headline test: after coherent dedispersion and channel equalization, search residual carrier phase for repeated modulation patterns, non-random phase trajectories, and low-description-length structure across bursts (preregistration Section 2.4; calibration gate Section 6.4). Public-data first target: **FRB 20180916B**, the nearest-host repeater with public voltages (CHIME Baseband Catalog 1 bursts; LOFAR complex voltages for band diversity), then the full CHIME baseband sample. FRB 20200120E — the thesis's first-priority target — has **no public voltage data** (verified 2026-08-07: PRECISE, Effelsberg DADA, DSN, and CHIME voltage sets are all request-only or internal; the public Zenodo products are intensity filterbanks down to 31.25 ns), so its phase-residual search is a follow-up request; its public intensity products still enter the Phase 3 H2 sweep at top host-distance priority.
 - CHIME/FRB Baseband Catalog 1 (140 FRBs) — coherent re-dedispersion, complex-voltage auto/cross-correlation beyond the plain-delay region already searched by Leung/Kader 2022, cyclostationarity with demonstrated (injected) sensitivity, and the Kader 2025 phase-coherence discriminator as the standard propagation veto;
-- BL FRB 121102 voltages, LOFAR FRB 20180916B complex voltages — band-diverse checks;
-- B1937+21 / Crab giant-pulse baseband — propagation-imprint null calibration (shared with Phase 2);
-- the chirp phase-transfer-function test of note Appendix C on the highest-S/N public events.
+- BL FRB 121102 voltages — band-diverse checks;
+- B1937+21 / Crab giant-pulse baseband — propagation-imprint and phase-null calibration (shared with Phase 2 and the H4 calibration gate);
+- the cold-plasma phase-transfer-function test of note Appendix C on the highest-S/N public events, as the zeroth-order case of the phase-residual search.
 
-**Deliverables:** transformed-repetition and determinism bounds on the public voltage sample; a short list of events warranting deeper (follow-up-phase) data requests.
+**Deliverables:** transformed-repetition and determinism bounds on the public voltage sample; phase-residual structure bounds — the excluded (modulation depth, S/N) region from the H4 injection grid, with a null independently publishable as a constraint on coherent burst-emission physics; a short list of events warranting deeper (follow-up-phase) data requests, with the FRB 20200120E voltage sets at the top.
 
 ---
 
@@ -113,6 +114,7 @@ All items below require data requests, memoranda, or observatory engagement. Non
 
 - **Time-resolved CHIME exposure (H1 at full scale):** request daily-or-finer good-time intervals and sensitivity masks for the Catalog 2 interval; rerun the frozen H1 machinery on the 83-repeater sample under a new major preregistration version.
 - **Candidate graveyards** (note Phase B): rejected, low-dispersion, pulsar-associated, and RFI-classified candidates; selection-function reconstruction; candidate-veto audit; hidden-event yield estimates.
+- **FRB 20200120E voltage requests (the rev3 first target at depth):** Effelsberg burst-storm DADA voltages ("available on reasonable request" per the published data statement), PRECISE station VDIF/Mark5B raw voltages (held by the AstroFlash team; absent from the public EVN archive, 404-verified), DSN DSS-63 baseband, and CHIME internal per-burst baseband. Under the rev3 collapsed architecture this is the single highest-value request in the follow-up; the Phase 4 FRB 20180916B result motivates it either way.
 - **Request-only baseband and voltage archives** (note Phase C at depth): CRAFT VCRAFT voltages, MeerTRAP filterbanks/voltages, BL MeerKAT stamps, FAST Data Center bulk retrieval, Vela UTAS archive.
 - **Pipeline-level injection-recovery** (note Section 11): per-instrument trigger/save/recover probabilities per design family — the machinery that converts Phase 3 nulls into design-family limits (note Section 14) tighter than the cutout-level caveats of the first paper.
 - **Live commensal trigger** (note Phase E): operate on saved candidates, flag transformed self-similarity, request extended buffer retention, preserve polarization/voltage data, initiate rapid follow-up.
@@ -136,4 +138,4 @@ All items below require data requests, memoranda, or observatory engagement. Non
 
 ## Summary sequence
 
-> Literature and novelty check first; the repeater-timing test on publicly logged campaigns second; tools with built-in cutout-level calibration third; the public archival sweep fourth; the public-baseband pilot fifth; and everything requiring collaboration — graveyards, request-only voltages, pipeline-level injection, full-sample CHIME timing, and the live trigger — deferred to a post-project follow-up motivated by the first paper's results.
+> Literature and novelty check first; the repeater-timing test on publicly logged campaigns second — now including the nearest-host target FRB 20200120E; tools with built-in cutout-level calibration third; the public archival sweep fourth, with the two builder classes' streams co-primary and FRB repeaters ordered by host distance; the public-baseband pilot fifth, headlined by the phase-residual (H4) search with FRB 20180916B as the nearest public-voltage target; and everything requiring collaboration — graveyards, request-only voltages (FRB 20200120E's first among them), pipeline-level injection, full-sample CHIME timing, and the live trigger — deferred to a post-project follow-up motivated by the first paper's results.

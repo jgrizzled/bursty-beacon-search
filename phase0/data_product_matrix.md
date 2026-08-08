@@ -76,6 +76,7 @@ Note: chime-frb.ca is mid-rebuild (placeholder on all routes); use CANFAR/CADC r
 - FRB 20180916B: 28 TOAs (CHIME 2020 Ext. Data Table 1); Sand et al. 2023 (60 intensity + 45 baseband bursts + exposure to 2021-12; original release DOI 10.11570/20.0002); Apertif/LOFAR/uGMRT burst lists.
 - FRB 20121102A: ~425 detection/non-detection epochs 2012–2023 compiled in Braga et al. 2025 (arXiv:2408.12567; Zenodo DOI to pin down [P]); Cruces 2021 Effelsberg logs; Li 2021 CC0 1,652-burst table; Hewitt 2022; Jahns 2023.
 - Hyperactive repeaters for short-lag structure: FRB 20201124A (Xu 2022), 20220912A (Zhang 2023), 20240114A (Zhou 2025, arXiv:2507.14708; Parkes arXiv:2508.15615).
+- FRB 20200120E (rev3 nearest-host target): Nimmo 2023 42-session Effelsberg log + 60 barycentric TOAs, Kirsten 2022 15-run PRECISE log, Pearlman 23-session log with on-source exposure — all in-paper LaTeX tables, verified as the sixth H1 pair (manifest 1.7) [V]. CHIME per-source exposure for this source: none public (excluded from the repeater catalogs, "reported separately"; portal down).
 - RRATalog burst rates; Parkes Transient DB II timestamps.
 - Caveat: aggregators (Blinkverse, TNS) lack per-observation exposure logs. Per-paper start/stop logs can define $W(t)$ for selected campaigns; cumulative CHIME HEALPix products cannot supply the missing timestamps.
 
@@ -90,9 +91,37 @@ Note: chime-frb.ca is mid-rebuild (placeholder on all routes); use CANFAR/CADC r
 | NenuFAR FRB monitoring | no public release; waveforms usually deleted | [X] |
 | SGR 1935+2154 | CHIME intensity release 10.11570/20.0006 [V]; no public baseband for any burst [X] | mixed |
 
+## 8. Nearby-host repeater products (rev3 extragalactic prior; compiled 2026-08-07)
+
+_The rev3 thesis (research note Section 16.4) prioritizes repeaters localized to nearby hosts, nearest first; the frozen host-distance table is `data_manifest.md` Section 5. Only three confirmed repeaters sit within 200 Mpc: FRB 20200120E (M81, 3.6 Mpc), FRB 20181030A (NGC 3252, ~20 Mpc), FRB 20180916B (149 Mpc). All FRB 20200120E claims below were verified live 2026-08-07._
+
+### FRB 20200120E (M81 globular cluster, 3.6 Mpc — thesis first target)
+
+| Product | Contents | Access | Suitability | Flag |
+| --- | --- | --- | --- | --- |
+| Nimmo 2022 EVN burst products | `data_products.tar.gz` 12.2 GB CC-BY: 5 dspsr archives (8 µs / 125 kHz, full pol) of B1–B5; filterbanks at 31.25 ns/16 MHz (×3), 1 µs/500 kHz (×3), 125 ns/4 MHz (×1); ACF/spectra NumPy products. Derived from SFXC-converted voltages — **detected products, not raw voltages** | Zenodo 10.5281/zenodo.5666802 | M (finest public intensity products on any extragalactic FRB; H2 copy-exactness at ns scales); **not V — phase discarded** | [V] |
+| Kirsten 2022 EVN correlated visibilities | EK048B/C/F FITS-IDI (~7.7 + 10 + 31 GB) + EVN pipeline calibration; coherent-dedispersion burst-gate visibilities | archive.jive.nl `exp/EK048{B,C,F}_*/fits/`, anonymous (12-month proprietary policy elapsed) | astrometry/localization; **not usable as voltage time series** | [V] |
+| Nimmo 2023 burst-storm filterbanks | 16.6 GB tarball: 60 bursts, 5.12 µs Stokes-I filterbanks | Zenodo 10.5281/zenodo.7555187 | M; T (H1 campaign cutouts, manifest 1.7) | [V] |
+| Pearlman B1–B9 spectra | channelized Stokes I npy/npz (8 µs; B4 to 31.25 ns), ~8 MB, CC-BY | Zenodo 10.5281/zenodo.13359005 | M | [V] |
+| Zhang 2024 Haoping burst | FITS dynamic spectrum of the 30 Jy ms burst | GitHub `Astroyx/M81_FRB_haoping` (stated Zenodo 10.5281/zenodo.13134790 is **dead, 404** — GitHub is the only live copy) | M | [V] |
+| Raw voltages: PRECISE station VDIF/Mark5B (PR-series absent from EVN archive, 404-verified), Effelsberg burst-storm DADA ("on reasonable request"), DSN DSS-63 62.5 ns baseband (no DA statement), CHIME per-burst baseband (internal) | exist per papers; none public | — | V — **all collaboration-gated; follow-up requests** | [X] |
+
+### FRB 20181030A (NGC 3252, ~20 Mpc)
+
+CHIME repeater; 2018 discovery bursts in Catalog 1 products; baseband used for localization exists internally but is **absent from the public baseband catalog** (verified against the release paper). No public voltage or per-source campaign log. [X voltage]
+
+### FRB 20180916B (149 Mpc) — **nearest-host repeater with public voltage data**
+
+Products already inventoried in Sections 1–2 and 6: CHIME **Baseband Catalog 1 includes its bursts** (beamformed dual-pol complex voltages, DOI 10.11570/23.0029) [V]; LOFAR complex voltages via LTA [P]; CHIME 2020 periodicity release DOI 10.11570/20.0002 [V]. This is the public-data first target for the phase-residual (H4) search; FRB 20200120E takes over when its request-only voltage sets are obtained (follow-up).
+
+### SETI prior art check (for the novelty audit)
+
+No published SETI/technosignature analysis of FRB 20200120E or M81 found; BL Open Data Archive has **no matching target** (API-verified). Closest: Gajjar et al. 2021 (RNAAS, GBT 4–8 GHz, 2.5 h, null) — BL-affiliated authors, pure FRB framing, no data release.
+
 ## Cross-cutting summary
 
 1. **Public voltage/baseband products identified and verified in this audit (not an exhaustive universal list):** CHIME Baseband Catalog 1 (140 FRBs) · BL GUPPI .raw incl. FRB 121102 · LOFAR LTA complex voltage (incl. FRB 20180916B) · B1937+21 GP baseband · Dwingeloo Crab snippet · MWA ASVO VCS (policy-level). Other products identified here are request-only.
 2. **Public data appear sufficient for substantial Phase 2–3 work, subject to the frozen manifest and schema checks. Phase 1 is conditional.** Burst epochs and cumulative exposure products are public, but the time-resolved $W(t)$ required by the confirmatory scanner likelihood has not been verified as public. Per-campaign observing logs may support a narrower Phase 1 sample.
 3. **Licensing watch:** FAST 20201124A atlas is CC-BY-NC-ND; UTAS Vela archive NC-ND/restricted.
-4. **Named outages (2026-08):** chime-frb.ca (rebuild), FRBCAT, FRBSTATS, realfast.io, Blinkverse's old domain.
+4. **Named outages (2026-08):** chime-frb.ca (rebuild), FRBCAT, FRBSTATS, realfast.io, Blinkverse's old domain; CANFAR vault intermittent on 2026-08-07 (Catalog 2 landing page 444, vault API 503 — Catalog 2 download policy-public but unverified live that day); Zenodo 13134790 (Zhang 2024 Haoping data) dead, GitHub mirror only.
+5. **Nearby-host verdict (rev3, Section 8):** no public voltage time series exists for any repeater within ~100 Mpc. The nearest repeater with public voltages is FRB 20180916B (149 Mpc, CHIME Baseband Catalog 1 + LOFAR LTA); FRB 20200120E public products are intensity-domain only (down to 31.25 ns) and its voltage sets are all request-only.

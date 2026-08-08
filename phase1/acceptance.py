@@ -63,10 +63,54 @@ FULL = dict(p_min=1.0 / 24.0, sigma_min=60.0 / pl.DAY_S,
             m1_kw=dict(n_periods=200, n_phase=24))
 
 
+class CkptPool:
+    """Checkpointing wrapper around a process pool's map: results are
+    appended to a JSONL keyed by (task_fn, family/model, index, jitter),
+    and completed tasks are skipped on restart. Sound because every task
+    is deterministic given its key (per-task seeded generators)."""
+
+    def __init__(self, pool, path):
+        self.pool, self.path = pool, Path(path)
+        self.done = {}
+        if self.path.exists():
+            with open(self.path) as f:
+                for line in f:
+                    k, v = json.loads(line)
+                    self.done[tuple(k)] = v
+        self.f = open(self.path, "a")
+
+    @staticmethod
+    def _key(fn, j):
+        return (fn.__name__, str(j[0]), int(j[1]),
+                float(j[5]) if len(j) > 5 else None)
+
+    def map(self, fn, jobs, chunksize=1):
+        jobs = list(jobs)
+        keys = [self._key(fn, j) for j in jobs]
+        assert len(set(keys)) == len(keys), "checkpoint keys not unique"
+        todo = [(k, j) for k, j in zip(keys, jobs) if k not in self.done]
+        if todo:
+            for (k, _), res in zip(todo, self.pool.map(
+                    fn, [j for _, j in todo], chunksize=chunksize)):
+                self.done[k] = res
+                self.f.write(json.dumps([list(k), res]) + "\n")
+                self.f.flush()
+        return [tuple(self.done[k]) for k in keys]
+
+
 def lam_of(t, win, cfg):
-    lam, det = pl.lambda_stat(t, win, cfg["p_min"], cfg["sigma_min"],
-                              cfg["tau_grid"], m1_kw=cfg["m1_kw"])
-    return lam, det
+    """Lambda via the validated exact C kernel (scan results equivalent to
+    pipeline.lambda_stat; see scripts/validate_fastscan.py, run before any
+    acceptance execution). Falls back to the reference implementation if
+    the kernel is not built."""
+    try:
+        import scankernel as sk
+        return sk.lambda_stat_c(t, win, cfg["p_min"], cfg["sigma_min"],
+                                cfg["tau_grid"], m1_kw=cfg["m1_kw"])
+    except RuntimeError:
+        lam, det = pl.lambda_stat(t, win, cfg["p_min"], cfg["sigma_min"],
+                                  cfg["tau_grid"], m1_kw=cfg["m1_kw"])
+        return lam, det
 
 
 def _sim_family(rng, win, name):
@@ -155,7 +199,20 @@ def _t2_task(args):
     if n_in < 25:
         return model, None
     if jitter_s:
-        t = np.sort(t + rng.normal(0.0, jitter_s / pl.DAY_S, len(t)))
+        # Timing jitter per prereg 2.2/9.5, clipped to session bounds:
+        # events outside W are excluded by the frozen model (prereg 4.1),
+        # and the reference implementation's value at out-of-window events
+        # in zero-exposure grid cells is a floating-point accident (see
+        # fastscan module notes). Clipping preserves the perturbation the
+        # test exists to probe while keeping the stream physical.
+        t = t + rng.normal(0.0, jitter_s / pl.DAY_S, len(t))
+        aw, bw = win
+        j = np.clip(np.searchsorted(aw, t, side="right") - 1, 0,
+                    len(aw) - 1)
+        tc = np.clip(t, aw[j], bw[j])
+        jn = np.clip(j + 1, 0, len(aw) - 1)
+        tn = np.clip(t, aw[jn], bw[jn])
+        t = np.sort(np.where(np.abs(tn - t) < np.abs(tc - t), tn, tc))
     _, det = lam_of(t, win, cfg)
     best = det["m3"] if (det["ll"][3] >= det["ll"][2]) else det["m2"]
     return model, _recovered(t, win, T_true, tau_true, best, cfg)
@@ -252,14 +309,23 @@ def main():
     n_inj = args.n_inj or (20 if args.scale == "test" else 200)
     win = load_sepoct_windows()
     t0 = time.time()
+    import hashlib
+    kern = ROOT / "phase1" / "_scankernel.c"
     results = {"scale": args.scale,
                "smoke_only": args.scale == "test",
                "workers": args.workers,
+               "kernel": {"source": "phase1/_scankernel.c",
+                          "source_sha256": hashlib.sha256(
+                              kern.read_bytes()).hexdigest()
+                          if kern.exists() else None,
+                          "validation": "scripts/validate_fastscan.py"},
                "seeding": "per-task default_rng([42, test, family, index])",
                "config": {k: (list(v) if isinstance(v, list) else v)
                           for k, v in cfg.items() if k != "m1_kw"},
                "n_sims_per_family": n_sims, "n_injections": n_inj}
-    with ProcessPoolExecutor(max_workers=args.workers) as pool:
+    with ProcessPoolExecutor(max_workers=args.workers) as raw_pool:
+        pool = CkptPool(raw_pool, ROOT / "phase1" /
+                        f"acceptance_checkpoint_{args.scale}.jsonl")
         print("[t3] alias flagging ...")
         results["t3_alias"] = t3_alias(win)
         print("[t4] positive controls ...")

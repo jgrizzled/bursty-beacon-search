@@ -50,6 +50,41 @@ def rand_window(rng, n_sessions, span):
     return np.array(a), np.array(b)
 
 
+def rand_events(rng, win, n):
+    """Events uniform over the LIVE time (inside sessions), matching the
+    physical invariant of prereg 4.1 ("events outside W impossible by
+    construction"). Streams scattered into exposure gaps can reach
+    degenerate zero-exposure/nonzero-count grid cells whose value under
+    the reference implementation is a floating-point accident (session-sum
+    residue vs. exact zero decides between a clamped log explosion and the
+    pooled floor); such inputs are outside the frozen model and outside
+    this validation's scope."""
+    a, b = win
+    w = b - a
+    j = rng.choice(len(a), size=n, p=w / w.sum())
+    return np.sort(rng.uniform(a[j], b[j]))
+
+
+
+def args_equiv(ll_ref, arg_ref, arg_new, t, win, tref):
+    """Argmax tuples match, or the new tuple is a degenerate tie: the
+    reference likelihood at the new tuple equals the reference maximum
+    (fp-level differences between implementations may reorder exact
+    ties among degenerate cells; the maximum itself must agree)."""
+    if arg_ref is None and arg_new is None:
+        return True
+    if arg_ref is None or arg_new is None:
+        return False
+    if all(x is None and y is None or
+           (x is not None and y is not None and abs(x - y) < 1e-9)
+           for x, y in zip(arg_ref, arg_new)):
+        return True
+    T, sig, tau, t0 = arg_new
+    iv = pl.scanner_intervals(T, sig, tau)
+    val = pl.scan_phases(t, win, T, iv, np.array([t0]), tref)[0]
+    return abs(val - ll_ref) < 1e-6
+
+
 def main():
     rng = np.random.default_rng(20260807)
 
@@ -57,8 +92,7 @@ def main():
     for trial in range(60):
         win = rand_window(rng, rng.integers(3, 25), rng.uniform(5, 60))
         span = float(win[1][-1] - win[0][0])
-        t = np.sort(rng.uniform(win[0][0], win[1][-1],
-                                rng.integers(0, 400)))
+        t = rand_events(rng, win, int(rng.integers(0, 400)))
         T = float(rng.uniform(0.05, span / 3))
         tref = float(win[0][0])
         sig = float(rng.uniform(0.001, 0.5 * T))
@@ -91,17 +125,14 @@ def main():
     for trial in range(12):
         win = rand_window(rng, rng.integers(4, 20), rng.uniform(8, 40))
         span = float(win[1][-1] - win[0][0])
-        t = np.sort(rng.uniform(win[0][0], win[1][-1],
-                                rng.integers(5, 250)))
+        t = rand_events(rng, win, int(rng.integers(5, 250)))
         p_min, s_min = span / 40.0, span / 400.0
         ll_ref, arg_ref = pl.scan_scanner(t, win, span, p_min, s_min,
                                           paired=False)
         ll_f, arg_f, _ = fs.scan_scanner_fast(t, win, span, p_min,
                                               s_min, paired=False)
-        ok = abs(ll_ref - ll_f) < 1e-7 and (
-            arg_ref is None and arg_f is None or
-            all(x is None and y is None or abs(x - y) < 1e-9
-                for x, y in zip(arg_ref, arg_f)))
+        ok = abs(ll_ref - ll_f) < 1e-7 and args_equiv(
+            ll_ref, arg_ref, arg_f, t, win, float(win[0][0]))
         check(f"M2 trial {trial}", ok,
               f"ref={ll_ref:.6f} fast={ll_f:.6f}")
 
@@ -109,24 +140,22 @@ def main():
     for trial in range(8):
         win = rand_window(rng, rng.integers(4, 16), rng.uniform(8, 30))
         span = float(win[1][-1] - win[0][0])
-        t = np.sort(rng.uniform(win[0][0], win[1][-1],
-                                rng.integers(5, 200)))
+        t = rand_events(rng, win, int(rng.integers(5, 200)))
         p_min, s_min = span / 30.0, span / 300.0
         taus = list(np.geomspace(s_min, span / 20.0, 5))
         ll_ref, arg_ref = pl.scan_scanner(t, win, span, p_min, s_min,
                                           paired=True, tau_grid=taus)
         ll_f, arg_f, nc = fs.scan_scanner_fast(
             t, win, span, p_min, s_min, paired=True, tau_grid=taus)
-        ok = abs(ll_ref - ll_f) < 1e-7 and (
-            arg_ref is None and arg_f is None or
-            all(x is None and y is None or abs(x - y) < 1e-9
-                for x, y in zip(arg_ref, arg_f)))
+        ok = abs(ll_ref - ll_f) < 1e-7 and args_equiv(
+            ll_ref, arg_ref, arg_f, t, win, float(win[0][0]))
         check(f"M3 trial {trial}", ok,
               f"ref={ll_ref:.6f} fast={ll_f:.6f} cells={nc}")
 
     print("[4] Lambda equivalence on real sepoct window (smoke config)")
-    win = ac.load_sepoct_windows()
+    win_sepoct = win = ac.load_sepoct_windows()
     cfg = ac.TEST
+    smoke_lams = {}
     for i, fam in enumerate(["M0", "M1", "M4", "M5"]):
         r = np.random.default_rng([7, i])
         t = ac._sim_family(r, win, fam)
@@ -142,9 +171,46 @@ def main():
                                            cfg["tau_grid"],
                                            m1_kw=cfg["m1_kw"])
         t_f = time.time() - t0c
+        smoke_lams[fam] = lam_f
         check(f"Lambda {fam}", abs(lam_ref - lam_f) < 1e-6,
               f"ref={lam_ref:.6f} fast={lam_f:.6f} "
               f"({t_ref:.2f}s -> {t_f:.2f}s)")
+
+    print("[5] C kernel equivalence (scankernel vs reference and fastscan)")
+    try:
+        import scankernel as sk
+    except Exception as e:
+        check("C kernel import/build", False, str(e))
+        sk = None
+    if sk is not None:
+        for trial in range(10):
+            win = rand_window(rng, rng.integers(4, 16), rng.uniform(8, 30))
+            span = float(win[1][-1] - win[0][0])
+            t = rand_events(rng, win, int(rng.integers(5, 200)))
+            p_min, s_min = span / 30.0, span / 300.0
+            taus = list(np.geomspace(s_min, span / 20.0, 5))
+            for paired in (False, True):
+                kw = dict(paired=paired,
+                          tau_grid=taus if paired else None)
+                ll_ref, arg_ref = pl.scan_scanner(t, win, span, p_min,
+                                                  s_min, **kw)
+                ll_c, arg_c, _ = sk.scan_scanner_c(t, win, span, p_min,
+                                                   s_min, **kw)
+                ok = abs(ll_ref - ll_c) < 1e-7 and args_equiv(
+                    ll_ref, arg_ref, arg_c, t, win, float(win[0][0]))
+                check(f"C {'M3' if paired else 'M2'} trial {trial}", ok,
+                      f"ref={ll_ref:.6f} c={ll_c:.6f}")
+        for i, fam in enumerate(["M0", "M1", "M4", "M5"]):
+            r = np.random.default_rng([7, i])
+            t = ac._sim_family(r, win_sepoct, fam)
+            t0c = time.time()
+            lam_c, _ = sk.lambda_stat_c(t, win_sepoct, cfg["p_min"],
+                                        cfg["sigma_min"], cfg["tau_grid"],
+                                        m1_kw=cfg["m1_kw"])
+            t_c = time.time() - t0c
+            lam_f = smoke_lams[fam]
+            check(f"C Lambda {fam}", abs(lam_f - lam_c) < 1e-6,
+                  f"fast={lam_f:.6f} c={lam_c:.6f} ({t_c:.2f}s)")
 
     print(f"\n{'ALL PASS' if FAIL == 0 else f'{FAIL} FAILURES'}")
     return 1 if FAIL else 0

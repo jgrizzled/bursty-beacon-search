@@ -1,8 +1,10 @@
-"""ctypes wrapper for the exact C scan kernel (_scankernel.c).
+"""ctypes wrapper for the exact cache-optimized C scan kernel.
 
 Provides scan_scanner_c / lambda_stat_c, drop-in equivalents of
 fastscan.scan_scanner_fast / lambda_stat_fast (same frozen search, same
-argmax semantics; validated by scripts/validate_fastscan.py --kernel).
+argmax semantics; validated by scripts/validate_fastscan.py). The C kernel
+reuses M3's common first interval across non-overlapping tau values without
+changing scan order or likelihood arithmetic.
 
 Build once with scripts/build_scankernel.sh (cc -O2 -shared). The .c
 source SHA-256 is recorded in acceptance artifacts; the dylib is a build

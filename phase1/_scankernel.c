@@ -1,4 +1,4 @@
-/* Exact C kernel for the M2/M3 scanner-grid scans.
+/* Exact cache-optimized C kernel for the M2/M3 scanner-grid scans.
  *
  * Same frozen search as pipeline.scan_scanner / fastscan.scan_scanner_fast:
  * identical grids (sigma doubling, tau filtering, t0 = i*h), identical
@@ -18,6 +18,10 @@
  *     (n_tot, e_tot, B) and is rebuilt only when B improves. Log calls
  *     therefore happen only at competitive grid points; the reported
  *     maxima are exact.
+ *  3. Shared first-interval cache for M3: at fixed (T, sigma), every
+ *     non-overlapping tau uses the same [t0, t0+sigma) first interval.
+ *     Its count and exposure are swept once over t0 and reused while the
+ *     original tau/t0 scan order and likelihood arithmetic are preserved.
  *
  * Caller (scankernel.py) passes, per period T: sorted event phases and
  * the cumulative phase-exposure polyline of fastscan.fold_exposure, both
@@ -119,6 +123,22 @@ int scan_period(const double *phi2, int n2, const double *xs2,
                 double *table_B) {
     FoldTables ft = {phi2, n2, xs2, es2, m2};
     int improved = 0;
+
+    /* One allocation per period, reused across all sigma values. Counts are
+     * stored as doubles to reproduce the baseline accumulation exactly.
+     * Allocation failure is harmless: the code falls back to the original
+     * two-interval path. */
+    long cache_len = 0;
+    double *base_cache = NULL;
+    if (mode == 1 && sigma_min > 0.0 && t0_frac > 0.0) {
+        cache_len = (long)ceil(T / (t0_frac * sigma_min));
+        if (cache_len > 0)
+            base_cache = malloc(2 * (size_t)cache_len
+                                * sizeof(*base_cache));
+    }
+    double *base_n = base_cache;
+    double *base_e = base_cache ? base_cache + cache_len : NULL;
+
     if (*table_B < *best) {           /* sync table with incoming best */
         build_table(e_star, n_tot, e_tot, pooled, *best);
         *table_B = *best;
@@ -136,12 +156,77 @@ int scan_period(const double *phi2, int n2, const double *xs2,
             n_tau = 1;
             taus_local[0] = -1.0;
         }
+
+        double s1 = sig < T ? sig : T;
+        int use_cache = 0;
+        if (base_cache && n_t0 <= cache_len) {
+            for (int it = 0; it < n_tau; it++) {
+                if (taus_local[it] >= s1) {
+                    use_cache = 1;
+                    break;
+                }
+            }
+        }
+
+        if (use_cache) {
+            Walkers first;
+            walkers_init(&first);
+            for (long i = 0; i < n_t0; i++) {
+                double lo = (double)i * h;
+                double hi = lo + s1;
+                first.lo_ev = adv_ev(&ft, first.lo_ev, lo);
+                first.hi_ev = adv_ev(&ft, first.hi_ev, hi);
+                base_n[i] = (double)(first.hi_ev - first.lo_ev);
+                first.lo_sg = adv_sg(&ft, first.lo_sg, lo);
+                first.hi_sg = adv_sg(&ft, first.hi_sg, hi);
+                base_e[i] = ev_at(&ft, first.hi_sg, hi)
+                          - ev_at(&ft, first.lo_sg, lo);
+            }
+        }
+
         for (int it = 0; it < n_tau; it++) {
             double tau = taus_local[it];
-            /* interval template per pipeline.scanner_intervals */
+
+            if (use_cache && tau >= s1) {
+                /* Non-overlapping M3 pair: reuse interval one and walk only
+                 * the tau-shifted second interval. */
+                double u2 = tau;
+                double w2 = (tau + sig < T ? tau + sig : T) - tau;
+                Walkers second;
+                walkers_init(&second);
+                for (long i = 0; i < n_t0; i++) {
+                    double t0 = (double)i * h;
+                    double lo = t0 + u2;
+                    double hi = lo + w2;
+                    double n_in = base_n[i];
+                    double e_in = base_e[i];
+                    second.lo_ev = adv_ev(&ft, second.lo_ev, lo);
+                    second.hi_ev = adv_ev(&ft, second.hi_ev, hi);
+                    n_in += (double)(second.hi_ev - second.lo_ev);
+                    second.lo_sg = adv_sg(&ft, second.lo_sg, lo);
+                    second.hi_sg = adv_sg(&ft, second.hi_sg, hi);
+                    e_in += ev_at(&ft, second.hi_sg, hi)
+                          - ev_at(&ft, second.lo_sg, lo);
+                    int ni = (int)(n_in + 0.5);
+                    if (e_in >= e_star[ni]) continue;
+                    double ll = two_bin(n_in, e_in, n_tot, e_tot, pooled);
+                    if (ll > *best) {
+                        *best = ll;
+                        out_arg[0] = sig;
+                        out_arg[1] = tau;
+                        out_arg[2] = t0;
+                        out_arg[3] = ll;
+                        improved = 1;
+                        build_table(e_star, n_tot, e_tot, pooled, *best);
+                        *table_B = *best;
+                    }
+                }
+                continue;
+            }
+
+            /* Original path: M2, overlapping M3, or malloc fallback. */
             double u[2], w[2];
             int n_iv;
-            double s1 = sig < T ? sig : T;
             if (mode == 0) {
                 n_iv = 1; u[0] = 0.0; w[0] = s1;
             } else if (tau < s1) {    /* overlapping pair: merged */
@@ -186,5 +271,6 @@ int scan_period(const double *phi2, int n2, const double *xs2,
             }
         }
     }
+    free(base_cache);
     return improved;
 }

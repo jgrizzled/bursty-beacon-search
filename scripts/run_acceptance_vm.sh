@@ -14,7 +14,7 @@ echo "== equivalence validation (gate) =="
 uv run python scripts/validate_fastscan.py | tee phase1/validation_output.txt
 grep -q "ALL PASS" phase1/validation_output.txt
 
-WORKERS=$(( $(nproc) - 1 ))
+WORKERS=$(nproc)
 echo "== launching full-scale acceptance run ($WORKERS workers) =="
 nohup uv run python phase1/acceptance.py --scale full --workers "$WORKERS" \
   > phase1/acceptance_full_run.log 2>&1 &

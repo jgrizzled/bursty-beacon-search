@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build the exact C scan kernel (phase1/_scankernel.c -> shared library).
+# Build the exact cache-optimized C scan kernel into a shared library.
 # Output suffix matches what phase1/scankernel.py loads per platform.
 set -e
 cd "$(dirname "$0")/../phase1"

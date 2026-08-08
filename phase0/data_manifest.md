@@ -219,10 +219,11 @@ Watch list (checked and excluded 2026-08-07, re-verify at each freeze): FRB 2024
 
 ## 6. Software environment (pinned at each freeze)
 
-- Working environment (recorded 2026-08-07, finalized at tag): Python 3.12.2, numpy 2.5.1, scipy 1.18.0, astropy 8.0.1 — full transitive lock in `phase0/requirements-lock.txt` (`.venv` local, gitignored).
-- Repository commit: **[pending at tag]**
-- Solar-system ephemeris: DE440, file hash **[pending at tag — recorded when the barycentric window conversion is wired into the full-scale run]**
-- Observatory coordinates: astropy sites registry version **[pending at tag]**
+- Working environment (pinned 2026-08-07 in `phase0/environment_pin.json`): Python 3.12.2, numpy 2.5.1, scipy 1.18.0, astropy 8.0.1, erfa 2.0.1.5, jplephem 2.24 — full transitive lock with hashes in `phase0/requirements-lock.txt` + `uv.lock` (`.venv` local, gitignored).
+- Repository commit: **[pending at tag]** (placeholder field in `environment_pin.json`, filled when the tag is created)
+- Solar-system ephemeris: **DE440**, 119,799,808 bytes, SHA-256 `a4ce9bf9b3282becc9f4b2ac3cebe03a2ae7599981aabd7265fd8482fff7c4b5` — loaded through the real conversion path (`phase1/bary.py`) and hashed from the resolved kernel file.
+- Observatory coordinates: astropy sites registry (`data.astropy.org/coordinates/sites.json`) content SHA-256 and resolved ITRF x,y,z for FAST/Effelsberg/Nançay/CHIME/Parkes recorded in `environment_pin.json`. Observatories absent from the registry use the frozen supplementary ITRF coordinates in `phase1/bary.py`: Tianma 65-m, Toruń, Onsala 25-m (NRAO SCHED `locations.dat`, GSF2016a/ITRF2000), Westerbork RT-1 (SCHED RT0 entry as proxy, < 1 µs effect), Stockert (published geodetic position). Observatory-position error bounds the conversion error by ≤ ~21 ms — four orders below σ_v,min = 60 s.
+- Reference conversion frozen as a regression anchor: Effelsberg → FRB 20200120E VLBI position, topocentric MJD 59593.650 → BJD_TDB 59593.65434577 (+6.26 min), asserted by the full-scale run before converting windows. (Consistency note: this shift places the 2022-01-14 storm bursts inside their session window, resolving the apparent 5.7-min overshoot visible when naively comparing barycentric TOAs to topocentric windows — manifest 1.7a.)
 
 ## 7. Pre-freeze inspection log
 

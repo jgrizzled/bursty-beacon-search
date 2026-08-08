@@ -1,0 +1,92 @@
+{
+ "recorded_utc": "2026-08-08T01:36:13+00:00",
+ "platform": "macOS-26.5.2-arm64-arm-64bit",
+ "python": "3.12.2",
+ "packages": {
+  "astropy": "8.0.1",
+  "erfa": "2.0.1.5",
+  "numpy": "2.5.1",
+  "scipy": "1.18.0"
+ },
+ "lockfiles": [
+  "uv.lock",
+  "phase0/requirements-lock.txt"
+ ],
+ "ephemeris": {
+  "name": "de440",
+  "kernel_file_resolved": "/Users/jgreene/.cache/astropy/download/url/dabea460521989808aedfb52df4e07e4/contents",
+  "size_bytes": 119799808,
+  "sha256": "a4ce9bf9b3282becc9f4b2ac3cebe03a2ae7599981aabd7265fd8482fff7c4b5"
+ },
+ "sites_registry": {
+  "url": "http://data.astropy.org/coordinates/sites.json",
+  "sha256": "f7d28418ed81204f5f54a63c8e968a4ccec6f1df6e6d599c136e000103bb36e0",
+  "resolved_sites_itrf_m": {
+   "FAST": [
+    -1668557.0000000005,
+    5506838.000000001,
+    2744934.0000000014
+   ],
+   "effelsberg": [
+    4033947.1459999997,
+    486990.898,
+    4900431.067
+   ],
+   "nancay": [
+    4324165.810000001,
+    165927.11000000004,
+    4670132.83
+   ],
+   "chime": [
+    -2059166.3128707118,
+    -3621302.9719222393,
+    4814304.113113023
+   ],
+   "parkes": [
+    -4554231.500000001,
+    2816759.0999999996,
+    -3454036.3000000003
+   ]
+  }
+ },
+ "supplementary_sites_itrf_m": {
+  "values": {
+   "tianma65": [
+    -2826708.6476,
+    4679237.0665,
+    3274667.5514
+   ],
+   "torun": [
+    3638558.51,
+    1221969.72,
+    5077036.76
+   ],
+   "onsala85": [
+    3370965.8787,
+    711466.1978,
+    5349664.2006
+   ],
+   "westerbork_rt1": [
+    3828767.2647,
+    442446.1739,
+    5064921.57
+   ],
+   "stockert": [
+    4031452.6218432738,
+    475248.9804899371,
+    4903637.870193751
+   ]
+  },
+  "provenance": "NRAO SCHED locations.dat (GSF2016a; Torun ITRF2000); Westerbork RT0 as RT-1 proxy (<1 us); Stockert from published geodetic position (see phase1/bary.py)",
+  "error_bound_note": "observatory-position error affects the barycentric conversion by <= ~21 ms (Earth-radius light time), vs sigma_v,min = 60 s"
+ },
+ "reference_conversion": {
+  "site": "effelsberg",
+  "ra_deg": 149.47791395833332,
+  "dec_deg": 68.81690358333333,
+  "mjd_utc_topo": 59593.65,
+  "bjd_tdb_inf_freq": 59593.65434576837,
+  "note": "FRB 20200120E storm-session start; the full-scale run asserts this value to 1e-8 d before converting windows"
+ },
+ "repository_commit": "[recorded at tag]"
+}

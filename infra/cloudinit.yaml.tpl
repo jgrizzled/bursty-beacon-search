@@ -1,0 +1,76 @@
+#cloud-config
+
+users:
+  - name: admin
+    primary_group: admin
+    groups: wheel
+    shell: /bin/bash
+    lock_passwd: true
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+yum_repos:
+  epel-release:
+    name: Extra Packages for Enterprise Linux $releasever - $basearch
+    baseurl: https://download.fedoraproject.org/pub/epel/$releasever/Everything/$basearch
+    enabled: true
+    gpgcheck: true
+    gpgkey: https://download.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-$releasever
+
+# Update the system and install necessary packages
+package_update: true
+package_upgrade: true
+packages:
+  - firewalld
+  - yum-utils
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/cloudinit.conf
+    content: |
+      Port ${ssh_port}
+      PasswordAuthentication no
+      PermitRootLogin no
+      X11Forwarding no
+      MaxAuthTries 10
+      AllowTcpForwarding yes
+      AllowAgentForwarding no
+
+# Make sure the hostname is set correctly
+hostname: ${hostname}
+preserve_hostname: true
+
+timezone: ${tz}
+
+runcmd:
+  - [systemctl, daemon-reload]
+  - [systemctl, restart, sshd]
+
+  # Configure firewall
+  - [systemctl, enable, --now, firewalld]
+  # Remove default services we don't need
+  - firewall-cmd --permanent --zone=public --remove-service=dhcpv6-client
+  - firewall-cmd --permanent --zone=public --remove-service=cockpit
+  # Add SSH port
+  - firewall-cmd --permanent --zone=public --add-port=${ssh_port}/tcp
+  # Add rate limiting for SSH (10 connections per minute)
+  - firewall-cmd --permanent --zone=public --add-rich-rule='rule port port="${ssh_port}" protocol="tcp" accept limit value="10/m"'
+  # Rate limit ICMP (ping) - 1 ping per second
+  - firewall-cmd --permanent --zone=public --add-rich-rule='rule protocol value="icmp" accept limit value="1/s"'
+
+  # Bounds the amount of logs that can survive on the system
+  - [
+      sed,
+      "-i",
+      "s/#SystemMaxUse=/SystemMaxUse=3G/g",
+      /etc/systemd/journald.conf,
+    ]
+  - [
+      sed,
+      "-i",
+      "s/#MaxRetentionSec=/MaxRetentionSec=1week/g",
+      /etc/systemd/journald.conf,
+    ]
+
+  # Reload firewall to apply all changes
+  - firewall-cmd --reload

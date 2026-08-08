@@ -4,3 +4,12 @@ __pycache__/
 phase1/_scankernel.dylib
 phase1/acceptance_checkpoint_*.jsonl
 phase1/acceptance_full_run.log
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+terraform.tfvars.json
+config.auto.tfvars.json

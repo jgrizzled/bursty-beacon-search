@@ -1,6 +1,11 @@
 #!/bin/sh
-# Build the exact C scan kernel (phase1/_scankernel.c -> _scankernel.dylib).
+# Build the exact C scan kernel (phase1/_scankernel.c -> shared library).
+# Output suffix matches what phase1/scankernel.py loads per platform.
 set -e
 cd "$(dirname "$0")/../phase1"
-cc -O2 -shared -fPIC -o _scankernel.dylib _scankernel.c
-shasum -a 256 _scankernel.c _scankernel.dylib
+case "$(uname -s)" in
+  Darwin) OUT=_scankernel.dylib ;;
+  *)      OUT=_scankernel.so ;;
+esac
+cc -O2 -shared -fPIC -o "$OUT" _scankernel.c -lm
+shasum -a 256 _scankernel.c "$OUT" 2>/dev/null || sha256sum _scankernel.c "$OUT"

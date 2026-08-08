@@ -10,6 +10,7 @@ product and is gitignored.
 """
 
 import ctypes
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -18,13 +19,14 @@ import pipeline as pl
 from fastscan import fold_exposure
 
 _HERE = Path(__file__).resolve().parent
+_SUFFIX = ".dylib" if sys.platform == "darwin" else ".so"
 _LIB = None
 
 
 def _lib():
     global _LIB
     if _LIB is None:
-        path = _HERE / "_scankernel.dylib"
+        path = _HERE / f"_scankernel{_SUFFIX}"
         if not path.exists():
             raise RuntimeError(
                 "scan kernel not built: run scripts/build_scankernel.sh")

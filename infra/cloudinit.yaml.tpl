@@ -24,6 +24,11 @@ package_upgrade: true
 packages:
   - firewalld
   - yum-utils
+  # compute-run tooling (bursty-beacon-search acceptance suite)
+  - git
+  - gcc
+  - tmux
+  - htop
 
 write_files:
   - path: /etc/ssh/sshd_config.d/cloudinit.conf
@@ -34,7 +39,9 @@ write_files:
       X11Forwarding no
       MaxAuthTries 10
       AllowTcpForwarding yes
-      AllowAgentForwarding no
+      # agent forwarding enabled so the repo can be cloned via ssh with a
+      # forwarded key (ssh -A); no private key lands on the VM
+      AllowAgentForwarding yes
 
 # Make sure the hostname is set correctly
 hostname: ${hostname}
@@ -74,3 +81,23 @@ runcmd:
 
   # Reload firewall to apply all changes
   - firewall-cmd --reload
+
+  # Install uv for the admin user (manages its own Python; the repo's
+  # uv.lock pins the environment). Idempotent.
+  - [
+      sudo,
+      -u,
+      admin,
+      sh,
+      -c,
+      "curl -LsSf https://astral.sh/uv/install.sh | sh",
+    ]
+  # github.com host key so the first ssh clone is non-interactive
+  - [
+      sudo,
+      -u,
+      admin,
+      sh,
+      -c,
+      "mkdir -p ~/.ssh && chmod 700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null",
+    ]

@@ -12,4 +12,8 @@ phase1/acceptance_full_run.log
 .terraform.lock.hcl
 terraform.tfvars
 terraform.tfvars.json
-config.auto.tfvars.json
+config.auto.tfvars.jsonphase1/_scankernel.so
+phase1/validation_output.txt
+infra/config.auto.tfvars.json
+infra/.terraform/
+infra/*.tfstate*

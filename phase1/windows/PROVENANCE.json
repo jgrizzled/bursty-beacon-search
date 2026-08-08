@@ -1,6 +1,6 @@
 {
   "script": "scripts/extract_session_logs.py",
-  "script_sha256": "6a37f4cccbd53134e951210ed0a12cf1d35549ea83ae3c20858d8353ef8ccd93",
+  "script_sha256": "f91268dc26d09ef5b142c664a4751351c8d37eb556071db7f0c6fabd93169638",
   "outputs": {
     "fast20240114A_zhou111_sessions.csv": {
       "source": "data/raw/arxiv_sources/src_2507.14708/2023-SCIYG-for_author.tex",
@@ -71,6 +71,38 @@
       "rows": 36,
       "expected_rows": 36,
       "output_sha256": "964933fb9e7056d0d8861f70e896435c78a645808ddcb1ba1f8037b300d9413c"
+    },
+    "effelsberg20200120E_sessions.csv": {
+      "source": [
+        "data/raw/arxiv_sources/src_2206.03759/paper_mnras.tex",
+        "data/raw/arxiv_sources/src_2105.11445/main.tex",
+        "data/raw/arxiv_sources/src_2308.10930/preprint.tex"
+      ],
+      "source_sha256": [
+        "1dbdf41a94f22668bf48c159345e77041a69531caeb970d6304115f6b3ed0d67",
+        "cc763c832ec1e1b09b4d68beef348568bd9bc746a747c5c023ccd3efe2f5ee3e",
+        "6a8bd6160f3891b7b3575657a7da3b647870c62c53dc4a8e40710d881c41a394"
+      ],
+      "rows": 46,
+      "expected_rows": 46,
+      "output_sha256": "48cfdda750c1a37a30d135e6b80ce7461f094f69c4b2e07d1b74212eec3b6cef",
+      "construction": "Composed under the frozen handling rules of data_manifest.md 1.7: (a) precedence Pearlman on-source UTC windows > Kirsten PRECISE run windows > Nimmo start+duration, applied where windows overlap; 15 Pearlman + 3 Kirsten-only (PR161A, PR163A with the documented start/stop resolution, PR166A) + 28 Nimmo-only = 46 sessions. (c) Kirsten runs PR160A/PR162A/PR164A/PR165A dropped: they appear in no Effelsberg log and the publication does not pin their station or on-source semantics (conservative drop per manifest 1.7c). Pearlman adds 4 sessions absent from Nimmo's log, including the 2021-04-30 EDD session containing bursts B6-B9."
+    },
+    "effelsberg20200120E_bursts.csv": {
+      "source": [
+        "data/raw/arxiv_sources/src_2206.03759/paper_mnras.tex",
+        "data/raw/arxiv_sources/src_2105.11445/main.tex",
+        "data/raw/arxiv_sources/src_2308.10930/preprint.tex"
+      ],
+      "source_sha256": [
+        "1dbdf41a94f22668bf48c159345e77041a69531caeb970d6304115f6b3ed0d67",
+        "cc763c832ec1e1b09b4d68beef348568bd9bc746a747c5c023ccd3efe2f5ee3e",
+        "6a8bd6160f3891b7b3575657a7da3b647870c62c53dc4a8e40710d881c41a394"
+      ],
+      "rows": 69,
+      "expected_rows": 69,
+      "output_sha256": "293197382b30dc59541c6ea3096dfc2de4456fa3e9f948470c19631fa7e77066",
+      "construction": "69 unique bursts: Pearlman B1-B9 (B1-B5 deduplicated by published ID against Kirsten 2022/Nimmo 2022; Pearlman's re-barycentred TOAs adopted, superseded Kirsten TOAs and the 1-5 ms shifts recorded) plus Nimmo 2023's 60 bursts (IDs prefixed with observing date; no cross-table duplication exists for these). 53 of 69 lie in the single 2022-01-14 storm session (statistical-power caveat, manifest 1.7)."
     }
   }
 }

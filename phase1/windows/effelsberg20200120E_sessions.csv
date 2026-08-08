@@ -1,0 +1,47 @@
+session_id,mjd_start_topo,mjd_end_topo,utc_start,utc_end,on_source_min,published_duration_hr,backend,n_bursts,window_source,window_rule,notes
+P01,59199.088692,59199.422847,2020-12-16 02:07:43,2020-12-16 10:08:54,480.0,,PFFTS & EDD,0,pearlman2024_tab_radio_obs,pearlman_precedence,on-source UTC window (Pearlman 2024); session absent from Nimmo and Kirsten logs
+P02,59200.093044,59200.385382,2020-12-17 02:13:59,2020-12-17 09:14:57,420.0,,PFFTS & EDD,0,pearlman2024_tab_radio_obs,pearlman_precedence,on-source UTC window (Pearlman 2024); session absent from Nimmo and Kirsten logs
+P03,59265.713854,59265.907708,2021-02-20 17:07:57,2021-02-20 21:47:06,162.0,,PSRIX & VLBI,2,pearlman2024_tab_radio_obs,pearlman_precedence,"on-source UTC window (Pearlman 2024); supersedes Nimmo row 1 (start 59265.708, 4.99 hr), Kirsten PR141A (59265.708-59265.916)"
+P04,59280.661782,59280.855660,2021-03-07 15:52:58,2021-03-07 20:32:09,162.2,,PSRIX & VLBI,2,pearlman2024_tab_radio_obs,pearlman_precedence,"on-source UTC window (Pearlman 2024); supersedes Nimmo row 2 (start 59280.656, 4.99 hr), Kirsten PR143A (59280.656-59280.864)"
+P05,59283.797280,59283.991991,2021-03-10 19:08:05,2021-03-10 23:48:28,161.2,,PSRIX & VLBI,0,pearlman2024_tab_radio_obs,pearlman_precedence,"on-source UTC window (Pearlman 2024); supersedes Nimmo row 3 (start 59283.792, 4.99 hr), Kirsten PR144A (59283.792-59284.0)"
+P06,59289.763900,59289.947060,2021-03-16 18:20:01,2021-03-16 22:43:46,148.9,,PSRIX & VLBI,0,pearlman2024_tab_radio_obs,pearlman_precedence,"on-source UTC window (Pearlman 2024); supersedes Nimmo row 4 (start 59289.75, 4.99 hr), Kirsten PR145A (59289.75-59289.958)"
+P07,59295.680984,59295.863958,2021-03-22 16:20:37,2021-03-22 20:44:06,149.3,,PSRIX & VLBI,0,pearlman2024_tab_radio_obs,pearlman_precedence,"on-source UTC window (Pearlman 2024); supersedes Nimmo row 5 (start 59295.667, 4.99 hr), Kirsten PR146A (59295.667-59295.875)"
+N06,59313.437,59313.439917,,,,0.07,PSRIX baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N07,59313.458,59313.499667,,,,1.0,PSRIX baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N08,59314.508,59314.600083,,,,2.21,PSRIX baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+P08,59314.887963,59314.970972,2021-04-10 21:18:40,2021-04-10 23:18:12,73.3,,PSRIX & VLBI,0,pearlman2024_tab_radio_obs,pearlman_precedence,"on-source UTC window (Pearlman 2024); supersedes Nimmo row 9 (start 59314.887, 2.04 hr), Kirsten PR153A (59314.887-59314.972)"
+P09,59315.190995,59315.228079,2021-04-11 04:35:02,2021-04-11 05:28:26,53.4,,PSRIX,0,pearlman2024_tab_radio_obs,pearlman_precedence,"on-source UTC window (Pearlman 2024); supersedes Nimmo row 10 (start 59315.191, 0.89 hr)"
+N11,59316.235,59316.283750,,,,1.17,PSRIX baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+P10,59320.827998,59320.920498,2021-04-16 19:52:19,2021-04-16 22:05:31,133.2,,PSRIX,0,pearlman2024_tab_radio_obs,pearlman_precedence,"on-source UTC window (Pearlman 2024); supersedes Nimmo row 12 (start 59320.828, 2.22 hr)"
+P11,59322.514005,59322.597338,2021-04-18 12:20:10,2021-04-18 14:20:10,120.0,,PSRIX,0,pearlman2024_tab_radio_obs,pearlman_precedence,"on-source UTC window (Pearlman 2024); supersedes Nimmo row 13 (start 59322.514, 2.0 hr)"
+P12,59332.463854,59332.654664,2021-04-28 11:07:57,2021-04-28 15:42:43,172.6,,PSRIX & VLBI,1,pearlman2024_tab_radio_obs,pearlman_precedence,"on-source UTC window (Pearlman 2024); supersedes Nimmo row 14 (start 59332.458, 4.99 hr), Kirsten PR158A (59332.458-59332.916)"
+N15,59334.807,59334.893667,,,,2.08,PSRIX baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+P13,59334.913634,59335.219201,2021-04-30 21:55:38,2021-05-01 05:15:39,436.6,,EDD,4,pearlman2024_tab_radio_obs,pearlman_precedence,on-source UTC window (Pearlman 2024); session absent from Nimmo and Kirsten logs
+N16,59335.634,59335.717750,,,,2.01,PSRIX baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+P14,59336.713970,59336.983299,2021-05-02 17:08:07,2021-05-02 23:35:57,240.5,,PSRIX & VLBI,0,pearlman2024_tab_radio_obs,pearlman_precedence,"on-source UTC window (Pearlman 2024); supersedes Nimmo row 17 (start 59336.708, 7.01 hr), Kirsten PR159A (59336.708-59337.0)"
+PR161A,59344.771,59344.875,,,,2.5,"PRECISE, VLBI backend",0,kirsten2022_tab_precise_runs,kirsten_primary,"PRECISE run window (original report; matches Nimmo row 18); VLBI run interleaves calibrators, on-source ~65% of span (Nimmo 2023 text); no on-source log available"
+PR163A,59347.417,59347.625,,,,4.99,"PRECISE, VLBI backend",0,kirsten2022_tab_precise_runs,pr163a_resolution_kirsten_primary,"Frozen resolution of the PR163A start/stop inconsistency: Kirsten 2022 logs PR163A as MJD 59347.417-59347.625; Nimmo 2023 lists a session starting 59347.625 (duration 4.99 hr), i.e. Nimmo's start equals Kirsten's stop, whereas in all ten other runs shared by both logs Nimmo's start equals Kirsten's start. Adopted: the Kirsten window (original PRECISE run report; the Nimmo table is a re-compilation citing it). Zero bursts under either reading; the rejected alternative (Nimmo) window 59347.625-59347.833 is recorded in this note and the choice shifts 5 h of burst-free exposure by 5 h."
+P15,59348.889653,59349.223958,2021-05-14 21:21:06,2021-05-15 05:22:30,480.0,,EDD,0,pearlman2024_tab_radio_obs,pearlman_precedence,on-source UTC window (Pearlman 2024); session absent from Nimmo and Kirsten logs
+PR166A,59360.708,59360.916,,,,4.99,"PRECISE, VLBI backend",0,kirsten2022_tab_precise_runs,kirsten_primary,"PRECISE run window (original report; matches Nimmo row 20); VLBI run interleaves calibrators, on-source ~65% of span (Nimmo 2023 text); no on-source log available"
+N21,59371.234,59371.337333,,,,2.48,"PRECISE, VLBI backend",0,nimmo2023_tab_observations,nimmo_only,"start+duration from Nimmo 2023 tab:observations; VLBI run interleaves calibrators, on-source ~65% of duration (Nimmo 2023 text); no on-source log available"
+N22,59459.027,59459.214500,,,,4.5,"PRECISE, VLBI backend",0,nimmo2023_tab_observations,nimmo_only,"start+duration from Nimmo 2023 tab:observations; VLBI run interleaves calibrators, on-source ~65% of duration (Nimmo 2023 text); no on-source log available"
+N23,59462.168,59462.380917,,,,5.11,"PRECISE, VLBI backend",0,nimmo2023_tab_observations,nimmo_only,"start+duration from Nimmo 2023 tab:observations; VLBI run interleaves calibrators, on-source ~65% of duration (Nimmo 2023 text); no on-source log available"
+N24,59559.584,59559.667333,,,,2.0,EDD baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations; frequency resolution 0.4 MHz
+N25,59564.902,59564.985333,,,,2.0,EDD baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N26,59571.573,59571.656333,,,,2.0,EDD baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N27,59575.735,59575.792500,,,,1.38,EDD baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N28,59578.622,59578.705333,,,,2.0,EDD baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N29,59582.677,59582.685333,,,,0.2,EDD baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N30,59582.785,59582.805833,,,,0.5,EDD baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N31,59593.650,59593.733333,,,,2.0,EDD baseband-mode,53,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N32,59596.262,59596.297417,,,,0.85,EDD baseband-mode,1,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N33,59598.871,59598.975167,,,,2.5,EDD baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N34,59602.235,59602.236250,,,,0.03,EDD baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N35,59631.818,59631.922167,,,,2.5,EDD baseband-mode,2,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations; no raw voltages (incorrect observing set-up)
+N36,59632.673,59632.762583,,,,2.15,EDD baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations; no raw voltages (incorrect observing set-up)
+N37,59633.599,59633.681917,,,,1.99,EDD baseband-mode,2,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N38,59655.950,59656.054167,,,,2.5,EDD baseband-mode,2,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N39,59668.052,59668.084500,,,,0.78,EDD baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N40,59678.079,59678.135667,,,,1.36,EDD baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N41,59680.974,59681.042750,,,,1.65,EDD baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations
+N42,59693.655,59693.690417,,,,0.85,EDD baseband-mode,0,nimmo2023_tab_observations,nimmo_only,start+duration from Nimmo 2023 tab:observations

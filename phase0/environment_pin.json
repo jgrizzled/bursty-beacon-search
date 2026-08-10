@@ -88,5 +88,9 @@
   "bjd_tdb_inf_freq": 59593.65434576837,
   "note": "FRB 20200120E storm-session start; the full-scale run asserts this value to 1e-8 d before converting windows"
  },
- "repository_commit": "[recorded at tag]"
+ "repository_commit": {
+  "pin_finalized_at_parent": "d979ba8c5083c2d57003e439466e8f3f412cf3b5",
+  "tag": "prereg-h1-v1.0",
+  "note": "the tag points to the commit containing this finalized file; resolve with git rev-parse prereg-h1-v1.0^{commit}"
+ }
 }

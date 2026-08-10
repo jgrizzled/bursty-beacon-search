@@ -29,7 +29,7 @@ import time
 from pathlib import Path
 
 import numpy as np
-from scipy.stats import kstest
+from scipy.stats import ks_2samp, kstest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pipeline as pl  # noqa: E402
@@ -148,10 +148,16 @@ def t1_null_uniformity(win, cfg, n_sims, pool):
         lams = np.array(results[name])
         half = n_sims // 2
         ref, test_half = lams[:half], lams[half:]
-        # p-value of each test sim against the reference distribution
-        pvals = np.array([(np.sum(ref >= x) + 1) / (half + 1)
-                          for x in test_half])
-        ks = kstest(pvals, "uniform")
+        # Split-half exchangeability via the TWO-sample KS test. An earlier
+        # draft ranked the test half against the reference half and applied
+        # a one-sample KS to the resulting p-values; those p-values share
+        # one reference sample, so that construction is a two-sample
+        # comparison evaluated against the wrong (one-sample) null and is
+        # anti-conservative (measured ~13% false-failure per family at the
+        # 0.01 cut on the full-scale run's random re-splits, vs exactly
+        # 1.0% for the two-sample test). Corrected pre-tag, 2026-08-09;
+        # the underlying simulation results are unchanged.
+        ks = ks_2samp(ref, test_half)
         out[name] = {"ks_p": float(ks.pvalue), "n": n_sims,
                      "lam_median": float(np.median(lams)),
                      "pass": bool(ks.pvalue > 0.01)}

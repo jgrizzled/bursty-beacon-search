@@ -1,0 +1,108 @@
+[t3] alias flagging ...
+[t4] positive controls ...
+[t2] scanner recovery (200 injections x2, 48 workers) ...
+[t5] jitter stability ...
+[t1] null uniformity (1000 sims x 4 families) ...
+{
+  "scale": "full",
+  "smoke_only": false,
+  "workers": 48,
+  "kernel": {
+    "source": "phase1/_scankernel.c",
+    "source_sha256": "69e7f28755fe48cc043fc6711942e1222a33455d7757a66d36abc88bf539a7d9",
+    "validation": "scripts/validate_fastscan.py"
+  },
+  "seeding": "per-task default_rng([42, test, family, index])",
+  "config": {
+    "p_min": 0.041666666666666664,
+    "sigma_min": 0.0006944444444444445,
+    "tau_grid": [
+      0.0006944444444444445,
+      0.0010416666666666667,
+      0.0015625,
+      0.00234375,
+      0.003515625,
+      0.0052734375,
+      0.00791015625,
+      0.011865234375,
+      0.0177978515625,
+      0.026696777343750002,
+      0.040045166015625,
+      0.060067749023437506,
+      0.09010162353515626,
+      0.13515243530273438,
+      0.20272865295410156,
+      0.3040929794311524,
+      0.45613946914672854
+    ]
+  },
+  "n_sims_per_family": 1000,
+  "n_injections": 200,
+  "t3_alias": {
+    "sidereal_flagged": true,
+    "solar_x2_flagged": true,
+    "off_alias_unflagged": true,
+    "pass": true
+  },
+  "t4_controls": {
+    "FRB20180916B": {
+      "P_hat_d": 16.3016360766914,
+      "expected": 16.35,
+      "window_model": "continuous (smoke approx)",
+      "pass": true
+    },
+    "FRB20121102A": {
+      "P_hat_d": 147.67950532132005,
+      "expected": "157-161",
+      "window_model": "real Cruces sessions",
+      "pass": true
+    }
+  },
+  "t2_recovery": {
+    "M2": {
+      "n_valid": 166,
+      "recovered": 166,
+      "frac": 1.0,
+      "pass": true
+    },
+    "M3": {
+      "n_valid": 182,
+      "recovered": 182,
+      "frac": 1.0,
+      "pass": true
+    }
+  },
+  "t5_jitter": {
+    "n_valid": 166,
+    "recovered": 166,
+    "pass": true
+  },
+  "t1_null_uniformity": {
+    "M0": {
+      "ks_p": 0.2133295336548917,
+      "n": 1000,
+      "lam_median": 20.086663771689928,
+      "pass": true
+    },
+    "M1": {
+      "ks_p": 0.0009741503721680227,
+      "n": 1000,
+      "lam_median": 72.27911551549187,
+      "pass": false
+    },
+    "M4": {
+      "ks_p": 0.042488831738885735,
+      "n": 1000,
+      "lam_median": -1087.5242857363246,
+      "pass": true
+    },
+    "M5": {
+      "ks_p": 0.09058477902306428,
+      "n": 1000,
+      "lam_median": -198.74792725284715,
+      "pass": true
+    }
+  },
+  "runtime_s": 104279.6
+}
+written: /home/admin/bursty-beacon-search/phase1/acceptance_results_full.json

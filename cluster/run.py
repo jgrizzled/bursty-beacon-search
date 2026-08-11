@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Run the Section 6.2 calibration for one null family on a Hetzner
-cpx51 fleet (execution spec: phase1/CALIBRATION_PLAN.md; adapted from
-the hetz-compute sharded example).
+cpx62 fleet (execution spec: phase1/CALIBRATION_PLAN.md).
 
 Flow:
   1. terraform apply (idempotent -- existing servers are reused)

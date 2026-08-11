@@ -1,6 +1,6 @@
 # Section 6.2 calibration cluster
 
-Sharded execution of `phase1/calibration.py` on a Hetzner cpx51 fleet.
+Sharded execution of `phase1/calibration.py` on a Hetzner cpx62 fleet.
 Execution spec: `phase1/CALIBRATION_PLAN.md`. The cluster layer only
 distributes sim ranges — every result is exactly reproducible on a
 single machine with
@@ -10,7 +10,7 @@ single machine with
 
 ```
 run.py    orchestrator (stdlib only, runs locally)
-infra/    terraform: N x cpx51 + firewall (from hetz-compute template)
+infra/    terraform: N x cpx62 + firewall (from hetz-compute template)
 state/    local run state: per-host downloads, collated output (gitignored)
 ```
 

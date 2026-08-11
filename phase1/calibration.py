@@ -77,7 +77,7 @@ DEFAULT_BATCH = 16          # sims per batched kernel call / unit
 # Cost-based unit chunking: an octave's period grid is split per model
 # into ceil(n_f * t_hi_d * MODEL_W / CHUNK_COST_PD) in-order chunks, so
 # every unit costs roughly the same wall time (~0.5-1 vCPU-h at batch 16
-# on cpx51) regardless of octave. Scan cost per period scales ~ with the
+# on cpx62) regardless of octave. Scan cost per period scales ~ with the
 # octave period (t0 cells ~ T/sigma) and M3 is ~5x M2 (tau grid).
 CHUNK_COST_PD = 780_000.0   # period-days per chunk, / model weight
 MODEL_W = {"M2": 1.0, "M3": 5.0}

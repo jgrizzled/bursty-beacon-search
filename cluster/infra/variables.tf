@@ -35,7 +35,7 @@ variable "hcloud_token" {
 variable "instance_type" {
   type        = string
   description = "Hetzner Cloud instance type"
-  default     = "cpx51"
+  default     = "cpx62"
 }
 
 variable "instance_count" {

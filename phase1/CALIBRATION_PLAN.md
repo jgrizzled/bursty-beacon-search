@@ -33,7 +33,7 @@ that artifact, never from a hand-typed constant.
    same code paths (`pl.m0_ll`, `pl.m1_scan`, `pl.m4_fit`, `pl.m5_fit`).
 2. **Laplace draws** (prereg 6.2 step 2). Parameterizations:
    M0 `[ln λ]` (analytic var 1/N); M1 `[ln P_a, δ, t0_frac, ln λ_in,
-   ln λ_out]`; M4 `[ln k, ln r]`; M5 `[ln α, ln β]`. Covariance =
+ln λ_out]`; M4 `[ln k, ln r]`; M5 `[ln α, ln β]`. Covariance =
    inverse of the symmetrized central-finite-difference Hessian of −ll
    at the MLE. Grid-profiled structural directions (M1) are locally
    flat, so raw FD curvature there is meaningless; eigenvalues are
@@ -96,7 +96,7 @@ that artifact, never from a hand-typed constant.
 ## Cluster execution (sharded; `cluster/run.py`)
 
 Simulations are homogeneous, so hosts get pre-assigned contiguous sim
-ranges (no work queue): terraform provisions N cpx51 hosts; each host
+ranges (no work queue): terraform provisions N cpx62 hosts; each host
 receives the current git HEAD, builds and validates the kernel, and runs
 `calibration.py run --family F --sims lo-hi --workers 16 --batch 16` as
 a detached systemd unit with unit-level checkpointing. The orchestrator
@@ -109,6 +109,6 @@ science path.
 ## Cost basis (measured 2026-08-11)
 
 Observed full-search cost ≈ 175 Apple-core-h/sim; batching ≈ 1.6–1.8×
-end-to-end; cpx51 ≈ 2× better price/performance than ccx63 (user
+end-to-end; cpx62 ≈ 2× better price/performance than ccx63 (user
 benchmark). Stage-1 single family ≈ €1.5–2.5k and ~1–2 weeks on a
 30–60 VM fleet; final fleet sizing decided at launch.

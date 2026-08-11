@@ -52,3 +52,12 @@ clearing (5.4) is applied at the peak-report level.
 
 Contamination check (Section 7: pulsar/RRAT catalogs, RFI logs) applies to
 any reported candidate before publication.
+
+Correction (2026-08-09, at first data contact): the nancay20220912A TOA
+column `Time of arrival (MJD)` is TOPOCENTRIC, not bary TDB inf-freq as
+annotated in the inputs table above (639/640 events lie inside the
+topocentric session log; the barycentric reading places 84/640 outside).
+Handled by the prereg 2.2 frozen path for topocentric inputs. Details and
+the related S2 event exclusions (Nançay B602; AstroFlash B39/B67) and the
+30 s session-edge tolerance are recorded in phase0/deviations.md
+(data-handling notes) and phase1/confirmatory.py.

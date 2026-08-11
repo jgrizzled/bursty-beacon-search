@@ -1,0 +1,106 @@
+{
+ "generated_utc": "2026-08-11T14:15:57+00:00",
+ "prereg": {
+  "tag": "prereg-h1-v1.0",
+  "purpose": "Section 6.2 calibration inputs"
+ },
+ "construction": "phase1/confirmatory.py build_campaign_inputs (frozen event rules, prereg 2.1/2.2; exact-equality cross-check asserted at export)",
+ "code_sha256": {
+  "confirmatory.py": "6bf9948daeddae239e883b5a5ae949c0000ce493c57f9b9958e5dd362d521204",
+  "export_script": "49df31be8ce2c60aaea55a05b8f7d01d7e493276bcb4a7ceb11c14dd9c275cb7"
+ },
+ "reference_conversion_assert": {
+  "site": "effelsberg",
+  "mjd_utc_topo": 59593.65,
+  "expected_bjd_tdb": 59593.65434576837,
+  "computed_bjd_tdb": 59593.65434576837,
+  "abs_err_d": 0.0,
+  "pass": true
+ },
+ "campaigns": {
+  "fast20201124A_sepoct": {
+   "n_events": 623,
+   "n_sessions": 18,
+   "span_days": 21.98111094263004,
+   "events_file": "fast20201124A_sepoct_events.csv",
+   "events_sha256": "2dc5bfac6bcd25f9d0c07e45e057cd17f9e9b9e4353daef181d8f49b6448da89",
+   "windows_file": "fast20201124A_sepoct_windows.csv",
+   "windows_sha256": "3671ba69a4f62c729e512ae20d6a511176252ffe27f0be3ad640cc887c4d5cf7",
+   "converted_window_sha256_float64": "739a1f681471f9d8d65616ff659aedd1ca82ba84e089782c42e24e79716cf445",
+   "window_source": "phase1/windows/fast20201124A_sepoct_sessions.csv",
+   "window_source_sha256": "da16c74e7c04c0691915dc818ae54ce682fdabee2c99d8ef341ea73ad4454a21",
+   "excluded_outside_windows": 0,
+   "notes": "CSV times rounded to 1e-12 d (~86 ns), five orders below sigma_v,min; the float64 window checksum above is the confirmatory-scan artifact cross-reference"
+  },
+  "nancay20220912A": {
+   "n_events": 639,
+   "n_sessions": 68,
+   "span_days": 186.4942927500815,
+   "events_file": "nancay20220912A_events.csv",
+   "events_sha256": "157d80c75309cef7d7a74b287c71f0f2dce7535b0e955caa52795de7473452ee",
+   "windows_file": "nancay20220912A_windows.csv",
+   "windows_sha256": "11368514f09f1d763573c431c2747b4b693082024b920cd286b94656c2608203",
+   "converted_window_sha256_float64": "ac70e1c8ba9bb8c2942288af85938f62d5fbbe37cc62a537ece8b5ec7c216fea",
+   "window_source": "phase1/windows/nancay20220912A_sessions.csv",
+   "window_source_sha256": "f15a80fb4fd773d82d917706294408c37e29dbf545592b775d00ec487e998e73",
+   "excluded_outside_windows": 1,
+   "notes": "CSV times rounded to 1e-12 d (~86 ns), five orders below sigma_v,min; the float64 window checksum above is the confirmatory-scan artifact cross-reference"
+  },
+  "astroflash20220912A": {
+   "n_events": 128,
+   "n_sessions": 508,
+   "span_days": 115.44992285496119,
+   "events_file": "astroflash20220912A_events.csv",
+   "events_sha256": "1c193295dd6c8d5ce19f0b445be8b78174f9ff8e5c7092fa5d220245916a1af6",
+   "windows_file": "astroflash20220912A_windows.csv",
+   "windows_sha256": "b55fa00e5c7be82be446ebfb31c788b8527e04fc9afac060fbaa1bbb2789d7ce",
+   "converted_window_sha256_float64": "4d4e0dc3bba659e1ec09690601257ab248d2d245ec07ccf727926ea1c29dbf4e",
+   "window_source": "phase1/windows/astroflash20220912A_sessions.csv",
+   "window_source_sha256": "d124010f94307bcc36dfed7a91237d129700e1ea9dbf76269b9cb7282c3b148f",
+   "excluded_outside_windows": 2,
+   "notes": "CSV times rounded to 1e-12 d (~86 ns), five orders below sigma_v,min; the float64 window checksum above is the confirmatory-scan artifact cross-reference"
+  },
+  "tmrt20240114A": {
+   "n_events": 152,
+   "n_sessions": 66,
+   "span_days": 383.05038873390004,
+   "events_file": "tmrt20240114A_events.csv",
+   "events_sha256": "f90d03333fe88dc06ac9f0c3f1aa6be101f91e83976dd53f46b350d99e3d583f",
+   "windows_file": "tmrt20240114A_windows.csv",
+   "windows_sha256": "640b4387499d46371c454cf3cfaba738c0acf61c81612d764702301c51ef0288",
+   "converted_window_sha256_float64": "4b42ee722b51ef45d4544c2cef73b5dca64cb2ac229915535ca261978a7d40d9",
+   "window_source": "phase1/windows/tmrt20240114A_sessions.csv",
+   "window_source_sha256": "afa4d2992fcdc9c5f8f8010f12db009f17aaa8a1f934b8f33c63b9f8d630bbf2",
+   "excluded_outside_windows": 0,
+   "notes": "CSV times rounded to 1e-12 d (~86 ns), five orders below sigma_v,min; the float64 window checksum above is the confirmatory-scan artifact cross-reference"
+  },
+  "effelsberg20200120E": {
+   "n_events": 69,
+   "n_sessions": 46,
+   "span_days": 494.59858064120635,
+   "events_file": "effelsberg20200120E_events.csv",
+   "events_sha256": "0c5b572557d4bedf0be6449e71f0258e233aa5c7b0a9b65f605c3727fd63f8bb",
+   "windows_file": "effelsberg20200120E_windows.csv",
+   "windows_sha256": "877d6df61d8fdb66c6f0501bb325df29b55a59e4695fd5c35406669e10c818c7",
+   "converted_window_sha256_float64": "1a474724fbe4860d2dcc71839849c18dc56a1f5b466b50a812f91003466be7d5",
+   "window_source": "phase1/windows/effelsberg20200120E_sessions.csv",
+   "window_source_sha256": "48cfdda750c1a37a30d135e6b80ce7461f094f69c4b2e07d1b74212eec3b6cef",
+   "excluded_outside_windows": 0,
+   "notes": "CSV times rounded to 1e-12 d (~86 ns), five orders below sigma_v,min; the float64 window checksum above is the confirmatory-scan artifact cross-reference"
+  },
+  "fast20240114A": {
+   "n_events": 9235,
+   "n_sessions": 111,
+   "span_days": 612.3529474588722,
+   "events_file": "fast20240114A_events.csv",
+   "events_sha256": "018da1b33bc6277472094c1e655dd1a426e54a8ea1eea02601ac2637854a7893",
+   "windows_file": "fast20240114A_windows.csv",
+   "windows_sha256": "761b47281e0fe1a81b8f3de25a08b589fa52930eb37f6d6740991384bea7fc6a",
+   "converted_window_sha256_float64": "d82c8755a0096a70b308fe57934553f1c783e3efa2312cfaf7d3d351cab88b1b",
+   "window_source": "phase1/windows/fast20240114A_zhou111_sessions.csv",
+   "window_source_sha256": "8741e9d938549eb58f0b0c4a5d60d4237a2e5f14e221a95fddd948954c44ec21",
+   "excluded_outside_windows": 0,
+   "notes": "CSV times rounded to 1e-12 d (~86 ns), five orders below sigma_v,min; the float64 window checksum above is the confirmatory-scan artifact cross-reference"
+  }
+ }
+}

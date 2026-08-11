@@ -212,6 +212,66 @@ def main():
             check(f"C Lambda {fam}", abs(lam_f - lam_c) < 1e-6,
                   f"fast={lam_f:.6f} c={lam_c:.6f} ({t_c:.2f}s)")
 
+    print("[6] batched kernel equivalence (scan_scanner_batch vs "
+          "per-stream scan_scanner_c)")
+    if sk is not None:
+        for trial in range(8):
+            win = rand_window(rng, rng.integers(4, 16), rng.uniform(8, 30))
+            span = float(win[1][-1] - win[0][0])
+            S = int(rng.integers(2, 7))
+            ts = [rand_events(rng, win, int(rng.integers(0, 200)))
+                  for _ in range(S)]
+            if trial == 0:
+                ts[0] = np.empty(0)         # empty-stream fallback parity
+            p_min, s_min = span / 30.0, span / 300.0
+            taus = list(np.geomspace(s_min, span / 20.0, 5))
+            for paired in (False, True):
+                kw = dict(paired=paired,
+                          tau_grid=taus if paired else None)
+                batch = sk.scan_scanner_batch(ts, win, span, p_min,
+                                              s_min, **kw)
+                ok = True
+                detail = ""
+                for s, t in enumerate(ts):
+                    ll_c, arg_c, n_c = sk.scan_scanner_c(
+                        t, win, span, p_min, s_min, **kw)
+                    ll_b, arg_b, n_b = batch[s]
+                    same_arg = (arg_c is None and arg_b is None) or (
+                        arg_c is not None and arg_b is not None
+                        and all((x is None and y is None)
+                                or (x is not None and y is not None
+                                    and x == y)
+                                for x, y in zip(arg_c, arg_b)))
+                    if not (ll_b == ll_c and same_arg and n_b == n_c):
+                        ok = False
+                        detail = (f"stream {s}: c=({ll_c:.9f},{arg_c}) "
+                                  f"batch=({ll_b:.9f},{arg_b})")
+                        break
+                check(f"batch {'M3' if paired else 'M2'} trial {trial} "
+                      f"(S={S})", ok, detail)
+        # Real-window case: sepoct windows, simulated streams incl. one
+        # empty and one dense.
+        win = win_sepoct
+        span = float(win[1][-1] - win[0][0])
+        cfg = ac.TEST
+        ts = [ac._sim_family(np.random.default_rng([9, k]), win,
+                             ["M0", "M1", "M4", "M5"][k % 4])
+              for k in range(5)] + [np.empty(0)]
+        for paired in (False, True):
+            kw = dict(paired=paired,
+                      tau_grid=cfg["tau_grid"] if paired else None)
+            batch = sk.scan_scanner_batch(ts, win, span, cfg["p_min"],
+                                          cfg["sigma_min"], **kw)
+            ok = True
+            for s, t in enumerate(ts):
+                ll_c, arg_c, n_c = sk.scan_scanner_c(
+                    t, win, span, cfg["p_min"], cfg["sigma_min"], **kw)
+                if not (batch[s][0] == ll_c and batch[s][1] == arg_c):
+                    ok = False
+                    break
+            check(f"batch real-window {'M3' if paired else 'M2'} "
+                  f"(S={len(ts)})", ok)
+
     print(f"\n{'ALL PASS' if FAIL == 0 else f'{FAIL} FAILURES'}")
     return 1 if FAIL else 0
 

@@ -34,12 +34,20 @@ def _lib():
                 "scan kernel not built: run scripts/build_scankernel.sh")
         lib = ctypes.CDLL(str(path))
         d = ctypes.POINTER(ctypes.c_double)
+        i = ctypes.POINTER(ctypes.c_int)
+        ll = ctypes.POINTER(ctypes.c_longlong)
         lib.scan_period.restype = ctypes.c_int
         lib.scan_period.argtypes = [
             d, ctypes.c_int, d, d, ctypes.c_int, ctypes.c_double,
             ctypes.c_int, ctypes.c_double, ctypes.c_double,
             ctypes.c_double, d, ctypes.c_int, ctypes.c_double,
             ctypes.c_int, d, d, d, d]
+        lib.scan_period_multi.restype = ctypes.c_int
+        lib.scan_period_multi.argtypes = [
+            d, ll, ctypes.c_int, d, d, ctypes.c_int, ctypes.c_double,
+            i, ctypes.c_double, d, ctypes.c_double, d, ctypes.c_int,
+            ctypes.c_double, ctypes.c_int, d, d, d, ctypes.c_longlong,
+            d, i]
         _LIB = lib
     return _LIB
 
@@ -88,6 +96,82 @@ def scan_scanner_c(t, win, span, p_min, sigma_min, paired=False,
             tau = None if out[1] < 0 else float(out[1])
             arg = (T, float(out[0]), tau, float(out[2]))
     return float(best.value), arg, len(periods)
+
+
+def scan_scanner_batch(ts, win, span, p_min, sigma_min, paired=False,
+                       tau_grid=None, t0_step_frac=0.5):
+    """Batched exact scan over S event streams sharing one window function
+    (the Section 6.2 simulation workload: same campaign windows, different
+    simulated streams). Returns a list of (best_ll, best_arg, n_periods),
+    one per stream, bit-identical to scan_scanner_c on each stream: the
+    kernel shares only the stream-independent exposure work, and each
+    stream keeps its own pruning state and first-in-scan-order argmax
+    (validated by scripts/validate_fastscan.py section [6]).
+
+    Streams with zero events take the same per-stream fallback path as
+    scan_scanner_c, preserving exact output parity."""
+    lib = _lib()
+    a, b = win
+    tref = float(a[0])
+    e_tot = pl.live_time(win)
+    periods = np.concatenate(
+        pl.scanner_grids(span, p_min, sigma_min) or [np.empty(0)])
+    ts = [np.asarray(t, float) for t in ts]
+    S_all = len(ts)
+    results = [None] * S_all
+    live = [s for s in range(S_all) if len(ts[s]) > 0]
+    if len(periods) == 0 or not live:
+        return [scan_scanner_c(t, win, span, p_min, sigma_min,
+                               paired=paired, tau_grid=tau_grid,
+                               t0_step_frac=t0_step_frac) for t in ts]
+    for s in range(S_all):
+        if len(ts[s]) == 0:            # scan_scanner_c's n_tot==0 fallback
+            results[s] = scan_scanner_c(
+                ts[s], win, span, p_min, sigma_min, paired=paired,
+                tau_grid=tau_grid, t0_step_frac=t0_step_frac)
+
+    S = len(live)
+    n_tot = np.array([len(ts[s]) for s in live], dtype=np.int32)
+    pooled = np.array([pl._nlogn(int(n), e_tot) for n in n_tot])
+    taus = np.ascontiguousarray(tau_grid if paired else [0.0], dtype=float)
+    best = np.full(S, -np.inf)
+    table_b = np.full(S, -np.inf)
+    out = np.zeros((S, 4))
+    improved = np.zeros(S, dtype=np.int32)
+    estar_stride = int(n_tot.max()) + 2
+    e_star = np.full((S, estar_stride), np.inf)
+    args = [None] * S
+    ipt = ctypes.POINTER(ctypes.c_int)
+    for T in periods:
+        T = float(T)
+        xs, Es = fold_exposure(win, T, tref)
+        xs2 = np.ascontiguousarray(np.concatenate([xs, xs[1:] + T]))
+        es2 = np.ascontiguousarray(np.concatenate([Es, Es[1:] + Es[-1]]))
+        phi2s = []
+        for s in live:
+            phi = np.sort(np.mod(ts[s] - tref, T))
+            phi2s.append(np.concatenate([phi, phi + T]))
+        off = np.zeros(S + 1, dtype=np.int64)
+        np.cumsum([len(p) for p in phi2s], out=off[1:])
+        flat = np.ascontiguousarray(np.concatenate(phi2s))
+        rc = lib.scan_period_multi(
+            _cptr(flat), off.ctypes.data_as(
+                ctypes.POINTER(ctypes.c_longlong)), S,
+            _cptr(xs2), _cptr(es2), len(xs2), T,
+            n_tot.ctypes.data_as(ipt), e_tot, _cptr(pooled),
+            sigma_min, _cptr(taus), len(taus), t0_step_frac,
+            1 if paired else 0, _cptr(best), _cptr(out.reshape(-1)),
+            _cptr(e_star.reshape(-1)), estar_stride, _cptr(table_b),
+            improved.ctypes.data_as(ipt))
+        if rc < 0:
+            raise MemoryError("scan_period_multi allocation failure")
+        for k in range(S):
+            if improved[k]:
+                tau = None if out[k, 1] < 0 else float(out[k, 1])
+                args[k] = (T, float(out[k, 0]), tau, float(out[k, 2]))
+    for k, s in enumerate(live):
+        results[s] = (float(best[k]), args[k], len(periods))
+    return results
 
 
 def events_in_windows(t, win, tol=1e-9):

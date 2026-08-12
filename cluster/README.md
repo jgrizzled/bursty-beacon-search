@@ -70,3 +70,22 @@ Collated output: `state/calibration_M4.json` (FAP_F, percentiles,
 frozen stop-rule status). Commit-worthy artifacts after a family
 completes: the collated JSON, per-batch `validation_output_host.txt`,
 and the per-batch summaries.
+
+## Smoke-testing the orchestration
+
+A full batch is ~a day of VM time, so the end-to-end path (apply →
+cloud-init → push → build → validation gate → unit → download →
+collate → destroy) is exercised with `--campaigns`, which restricts the
+shards to a campaign subset. `fast20201124A_sepoct` is 0.1% of the
+study-wide scan cost, so a two-batch run finishes in minutes:
+
+```sh
+python3 cluster/run.py --family M4 --sims 9000-9004 --batch 2 \
+    --hosts 1 --campaigns fast20201124A_sepoct
+```
+
+`--campaigns` is for this and nothing else — a production family run
+must scan all six campaigns. Always give a smoke test a sim range
+outside the 0–1000 stage-1 budget (as above), so its partial-search
+summaries can never be collated as calibration sims, and delete
+`state/results/<those batches>` afterwards.

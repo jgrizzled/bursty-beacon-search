@@ -77,7 +77,7 @@ REMOTE_UV = "/home/admin/.local/bin/uv"
 UNIT = "calib-shard"
 
 POLL_SECONDS = 30
-CLOUD_INIT_TIMEOUT = 1200
+CLOUD_INIT_TIMEOUT = 1800       # boot + package_upgrade, mirror-limited
 SETUP_TIMEOUT = 3600            # uv sync + kernel build + validation
 UNREACHABLE_LIMIT = 40          # polls (~20 min) before a host is dead
 MISSING_LIMIT = 3               # polls with no unit + no status
@@ -91,7 +91,15 @@ SSH_OPTS = [
     "-o", "UserKnownHostsFile=/dev/null",
     "-o", "LogLevel=ERROR",
     "-o", "ConnectTimeout=10",
+    # ConnectTimeout only bounds the TCP handshake; keepalives bound an
+    # established session that blackholes mid-command (the failure mode
+    # that would otherwise stall the whole poll loop for TCP-retransmit
+    # timescales).
+    "-o", "ServerAliveInterval=15",
+    "-o", "ServerAliveCountMax=4",
 ]
+SSH_TIMEOUT = 300               # hard cap on any single ssh command
+PROBE_PARALLEL = 16             # concurrent per-host polls
 
 
 def log(msg):
@@ -153,17 +161,30 @@ def maybe_destroy():
 
 # ---------------------------------------------------------------------- ssh
 
-def ssh_run(host, port, remote_cmd, check=True, timeout=None, stdin=None):
+def ssh_run(host, port, remote_cmd, check=True, timeout=SSH_TIMEOUT,
+            stdin=None):
+    """Run one remote command. A timeout is reported the same way an
+    unreachable host is (returncode 255 / CalledProcessError), so every
+    caller's existing failure path covers it."""
     cmd = ["ssh", "-p", str(port), *SSH_OPTS,
            f"{SSH_USER}@{host['ipv4']}", remote_cmd]
-    return subprocess.run(cmd, check=check, capture_output=True,
-                          text=True, timeout=timeout, input=stdin)
+    try:
+        return subprocess.run(cmd, check=check, capture_output=True,
+                              text=True, timeout=timeout, input=stdin)
+    except subprocess.TimeoutExpired:
+        err = f"ssh timed out after {timeout}s"
+        if check:
+            raise subprocess.CalledProcessError(255, cmd, "", err)
+        return subprocess.CompletedProcess(cmd, 255, "", err)
 
 
 def wait_cloud_init(host, port):
     deadline = time.time() + CLOUD_INIT_TIMEOUT
     while True:
-        r = ssh_run(host, port, "cloud-init status --wait", check=False)
+        # `--wait` blocks through package_upgrade, so this one command is
+        # allowed the whole cloud-init budget rather than SSH_TIMEOUT.
+        r = ssh_run(host, port, "cloud-init status --wait", check=False,
+                    timeout=CLOUD_INIT_TIMEOUT)
         if r.returncode in (0, 2):
             return
         if r.returncode != 255:
@@ -228,14 +249,15 @@ def setup_host(host, port):
     log(f"[{host['name']}] setup done, validation ALL PASS")
 
 
-def start_job(host, port, family, lo, hi, workers, batch):
+def start_job(host, port, family, lo, hi, workers, batch, campaigns=None):
     """(Re)start the shard unit for one batch; the shard resumes from
     whatever unit checkpoint exists in REMOTE_STATE."""
     inner = (
         f"{REMOTE_UV} run --project {REMOTE_TREE} python "
         f"{REMOTE_TREE}/phase1/calibration.py run --family {family} "
         f"--sims {lo}-{hi} --workers {workers} --batch {batch} "
-        f"--state-dir {REMOTE_STATE}")
+        f"--state-dir {REMOTE_STATE}"
+        + (f" --campaigns {campaigns}" if campaigns else ""))
     ssh_run(
         host, port,
         f"sudo systemctl stop {UNIT}.service 2>/dev/null; "
@@ -270,13 +292,16 @@ def parse_json(text):
 
 
 def probe(host, port, family, lo, hi):
-    r = ssh_run(
-        host, port,
-        f"systemctl show {UNIT}.service --property=ActiveState,Result "
-        f"2>/dev/null; echo @@@; "
-        f"cat {REMOTE_STATE}/status_{family}_{lo}-{hi}.json 2>/dev/null; "
-        f"echo",
-        check=False)
+    try:
+        r = ssh_run(
+            host, port,
+            f"systemctl show {UNIT}.service --property=ActiveState,Result "
+            f"2>/dev/null; echo @@@; "
+            f"cat {REMOTE_STATE}/status_{family}_{lo}-{hi}.json 2>/dev/null; "
+            f"echo",
+            check=False)
+    except OSError as e:                  # never let one host kill the poll
+        return {"phase": "unreachable", "detail": str(e)[:200]}
     if r.returncode != 0:
         return {"phase": "unreachable", "detail": r.stderr.strip()[:200]}
     parts = (r.stdout.split("@@@") + [""])[:2]
@@ -299,7 +324,10 @@ def probe(host, port, family, lo, hi):
 
 def pull_checkpoint(host, port, family, blo, bhi):
     name = f"units_{batch_key(family, blo, bhi)}.jsonl"
-    r = ssh_run(host, port, f"cat {REMOTE_STATE}/{name}", check=False)
+    try:
+        r = ssh_run(host, port, f"cat {REMOTE_STATE}/{name}", check=False)
+    except OSError:                  # best-effort: the poll retries later
+        return
     if r.returncode != 0 or not r.stdout:
         return
     p = staged_ckpt(family, blo, bhi)
@@ -379,6 +407,12 @@ def main():
     ap.add_argument("--batch", type=int, default=16,
                     help="sims per batch = per work unit (kernel stream "
                          "batch); 8 feeds fleets larger than 63 hosts")
+    ap.add_argument("--campaigns", default=None,
+                    help="comma-separated campaign subset passed to the "
+                         "shards -- SMOKE TESTS ONLY (a production family "
+                         "run must scan all six campaigns); use a sim "
+                         "range outside the 0-1000 stage-1 budget so the "
+                         "partial results cannot be mistaken for it")
     ap.add_argument("--keep-infra", action="store_true",
                     help="skip the final terraform destroy")
     ap.add_argument("--keep-failed", action="store_true",
@@ -392,6 +426,10 @@ def main():
     if r.stdout.strip():
         log("note: uncommitted changes present; hosts receive HEAD, "
             "not the working tree")
+
+    if args.campaigns:
+        log(f"WARNING: campaign subset {args.campaigns} -- smoke test "
+            f"only; these results are NOT stage-1 calibration sims")
 
     batches = make_batches(lo, hi, args.batch)
     queue = [b for b in batches
@@ -457,6 +495,7 @@ def main():
     replacements_left = 2 * max(args.hosts, 1)
     next_id = max([int(h["id"]) for h in hosts], default=-1) + 1
     polls = 0
+    n_downloaded = len(batches) - len(queue)
 
     def requeue(host, reason):
         b = host["batch"]
@@ -482,7 +521,7 @@ def main():
                 try:
                     seed_checkpoint(h, port, args.family, *b)
                     start_job(h, port, args.family, b[0], b[1],
-                              args.workers, args.batch)
+                              args.workers, args.batch, args.campaigns)
                 except subprocess.CalledProcessError as e:
                     queued.insert(0, b)
                     h["strikes"] += 1
@@ -553,12 +592,22 @@ def main():
         time.sleep(POLL_SECONDS)
         polls += 1
 
-        # -------- poll running hosts
-        for h in hosts:
-            if not (h["alive"] and h["batch"]):
-                continue
+        # -------- poll running hosts (concurrently: a serial cycle over
+        # a large fleet costs minutes and lets one slow host delay
+        # everyone's dispatch)
+        active = [h for h in hosts if h["alive"] and h["batch"]]
+        if active:
+            with ThreadPoolExecutor(
+                    max_workers=min(PROBE_PARALLEL, len(active))) as pool:
+                states = list(pool.map(
+                    lambda h: probe(h, port, args.family, *h["batch"]),
+                    active))
+        else:
+            states = []
+        progress = []                    # (host, done, total, elapsed_s)
+        to_pull = []                     # (host, batch) checkpoint pulls
+        for h, st in zip(active, states):
             b = h["batch"]
-            st = probe(h, port, args.family, b[0], b[1])
             if st["phase"] == "done":
                 try:
                     download_batch(h, port, args.family, b[0], b[1])
@@ -569,8 +618,10 @@ def main():
                     if h["strikes"] >= UNREACHABLE_LIMIT:
                         requeue(h, "download kept failing")
                     continue
+                n_downloaded += 1
                 log(f"[{h['name']}] {batch_key(args.family, *b)} done, "
-                    f"downloaded ({len(queued)} queued)")
+                    f"downloaded ({n_downloaded}/{len(batches)}; "
+                    f"{len(queued)} queued)")
                 staged_ckpt(args.family, *b).unlink(missing_ok=True)
                 h["batch"] = None
                 h["strikes"] = 0
@@ -578,11 +629,11 @@ def main():
                 h["strikes"] = 0
                 s = st.get("status") or {}
                 if s.get("units_total"):
-                    log(f"[{h['name']}] {batch_key(args.family, *b)}: "
-                        f"{s.get('units_done', 0)}/{s['units_total']} "
-                        f"units ({s.get('elapsed_s', 0) / 3600:.1f} h)")
+                    progress.append(
+                        (h, s.get("units_done", 0), s["units_total"],
+                         s.get("elapsed_s", 0)))
                 if polls % CKPT_PULL_EVERY == 0:
-                    pull_checkpoint(h, port, args.family, b[0], b[1])
+                    to_pull.append((h, b))
             elif st["phase"] in ("failed", "missing"):
                 h["strikes"] += 1
                 if st["phase"] == "failed" or h["strikes"] >= MISSING_LIMIT:
@@ -595,7 +646,8 @@ def main():
                             f"from checkpoint)")
                         try:
                             start_job(h, port, args.family, b[0], b[1],
-                                      args.workers, args.batch)
+                                      args.workers, args.batch,
+                                      args.campaigns)
                         except subprocess.CalledProcessError:
                             requeue(h, "restart failed")
                     else:
@@ -608,6 +660,26 @@ def main():
                         f"({h['strikes']}/{UNREACHABLE_LIMIT})")
                 if h["strikes"] >= UNREACHABLE_LIMIT:
                     requeue(h, "unreachable too long")
+
+        # -------- fleet summary every poll; per-host detail (and the
+        # checkpoint pulls, which are the bulky transfers) less often
+        if progress:
+            done_u = sum(p[1] for p in progress)
+            tot_u = sum(p[2] for p in progress)
+            log(f"fleet: {len(progress)} running {done_u}/{tot_u} units, "
+                f"{n_downloaded}/{len(batches)} batches downloaded, "
+                f"{len(queued)} queued")
+        if polls % CKPT_PULL_EVERY == 0:
+            for h, done_u, tot_u, el in progress:
+                log(f"[{h['name']}] {batch_key(args.family, *h['batch'])}: "
+                    f"{done_u}/{tot_u} units ({el / 3600:.1f} h)")
+        if to_pull:
+            with ThreadPoolExecutor(
+                    max_workers=min(PROBE_PARALLEL, len(to_pull))) as pool:
+                list(pool.map(
+                    lambda hb: pull_checkpoint(hb[0], port, args.family,
+                                               *hb[1]),
+                    to_pull))
 
     missing = [b for b in batches
                if not batch_done_locally(args.family, *b)]

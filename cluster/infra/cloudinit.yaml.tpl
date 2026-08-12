@@ -42,8 +42,12 @@ runcmd:
   - [ufw, default, allow, outgoing]
   # Allow local incoming connections
   - [ufw, allow, from, 10.0.0.0/24]
-  # Rate-limit SSH
-  - [ufw, limit, "${ssh_port}/tcp", comment, "Rate-limit SSH"]
+  # Plain allow, NOT `ufw limit`: the orchestrator's setup sequence opens
+  # ~6 ssh connections in a few seconds, and ufw's limit rule REJECTs the
+  # 6th new connection per 30 s per source (= the whole fleet fails its
+  # validation gate with "Connection refused"). Source filtering already
+  # happens in the Hetzner cloud firewall (ssh_allowed_ips).
+  - [ufw, allow, "${ssh_port}/tcp", comment, "SSH"]
   - [ufw, --force, enable]
 
   # Bounds the amount of logs that can survive on the system

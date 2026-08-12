@@ -12,6 +12,7 @@ product and is gitignored.
 """
 
 import ctypes
+import os
 import sys
 from pathlib import Path
 
@@ -48,8 +49,19 @@ def _lib():
             i, ctypes.c_double, d, ctypes.c_double, d, ctypes.c_int,
             ctypes.c_double, ctypes.c_int, d, d, d, ctypes.c_longlong,
             d, i]
+        lib.scankernel_set_seg_mode.restype = None
+        lib.scankernel_set_seg_mode.argtypes = [ctypes.c_int]
+        lib.scankernel_set_seg_mode(
+            int(os.environ.get("BBS_SEG_MODE", "0")))
         _LIB = lib
     return _LIB
+
+
+def set_seg_mode(mode):
+    """Segmented-sweep knob for the batched kernel: 0 auto (default),
+    1 force on, -1 force off. Pure performance choice -- every setting
+    is validated bit-identical (validate_fastscan.py section [7])."""
+    _lib().scankernel_set_seg_mode(int(mode))
 
 
 def _cptr(a):

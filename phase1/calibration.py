@@ -79,6 +79,11 @@ DEFAULT_BATCH = 16          # sims per batched kernel call / unit
 # every unit costs roughly the same wall time (~0.5-1 vCPU-h at batch 16
 # on cpx62) regardless of octave. Scan cost per period scales ~ with the
 # octave period (t0 cells ~ T/sigma) and M3 is ~5x M2 (tau grid).
+# Warm-chunk M4-stream measurements (2026-08-12, S=16): M3/M2 = 5.3 on
+# fast20240114A (~2/3 of total cost), 10-19x on the cheaper campaigns
+# whose units the segmented kernel shrinks ~2-20x anyway -- so w_M3 = 5
+# stays (chunk counts only set unit granularity; assembled per-sim
+# results are chunk-invariant under in-order strict-'>' combination).
 CHUNK_COST_PD = 780_000.0   # period-days per chunk, / model weight
 MODEL_W = {"M2": 1.0, "M3": 5.0}
 LAPLACE_STD_CAP = 5.0       # curvature floor: std <= 5 FD steps along

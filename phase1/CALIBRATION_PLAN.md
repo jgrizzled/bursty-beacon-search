@@ -61,7 +61,28 @@ ln λ_out]`; M4 `[ln k, ln r]`; M5 `[ln α, ln β]`. Covariance =
    first-in-scan-order argmax); validated by
    `scripts/validate_fastscan.py` section [6] with exact float equality
    (`phase1/validation_output_batch.txt`, ALL PASS, 2026-08-11).
-   Measured speedup 1.5–2.4× by octave/model. Production batch
+   Measured speedup 1.5–2.4× by octave/model.
+   **Segmented sweep (added 2026-08-12, before any production run).**
+   `scan_period_multi` additionally jumps over whole runs of t0 between
+   breakpoints (an interval edge crossing an exposure-polyline node or
+   any stream's event phase; counts constant, exposure affine within a
+   run) when every stream provably fails the same `e_in >= e_star[n]`
+   prune test the dense walk applies at each point — endpoint exposures
+   minus a rigorous rounding guard (exposure-flat runs are bitwise
+   constant; no guard needed). Runs that might compete are walked with
+   the dense-path arithmetic verbatim, so outputs stay bit-identical:
+   this is a traversal shortcut, not a change of evaluation. Engaged
+   per sigma by a density heuristic; forceable on/off via
+   `scankernel.set_seg_mode` / `BBS_SEG_MODE` (all modes give identical
+   results). Validated with exact float equality against the unchanged
+   single-stream kernel by `validate_fastscan.py` sections [6]–[7]
+   (`phase1/validation_output_seg.txt`, ALL PASS, 2026-08-12) and on
+   the real windows with production M4 streams by
+   `scripts/bench_segscan.py`. Measured warm-chunk speedup (S=16, M4
+   streams): ×3.4 Effelsberg, ×1.9 TMRT, ×1.0 on the event-dense FAST
+   campaigns; ≈×1.2 study-wide (the FAST 20240114A campaign is ≈2/3 of
+   total cost and its per-stream event density leaves no skippable
+   runs). Production batch
    `DEFAULT_BATCH = 16`; scan units are (campaign, octave, model,
    chunk, sim batch), with per-model chunk counts set by the cost rule
    `ceil(n_f · t_hi · w_model / 780,000 period-days)` (w_M3 = 5) so all
@@ -112,3 +133,14 @@ Observed full-search cost ≈ 175 Apple-core-h/sim; batching ≈ 1.6–1.8×
 end-to-end; cpx62 ≈ 2× better price/performance than ccx63 (user
 benchmark). Stage-1 single family ≈ €1.5–2.5k and ~1–2 weeks on a
 30–60 VM fleet; final fleet sizing decided at launch.
+
+Re-measured 2026-08-12 with the segmented kernel (warm-chunk marginal
+sampling over all octaves, S=16, production M4 streams, Apple M4):
+≈106 core-h/sim study-wide vs ≈129 on the same sampling without
+segmentation (×1.21); per campaign, fast20240114A ≈ 65% of total
+(unchanged), Effelsberg ×3.4, TMRT ×1.9. Sampling-based — treat the
+frozen 175 core-h/sim as the conservative planning number and expect
+the savings to land mostly in wall time on the sparse campaigns'
+units. Measured M3/M2 cost ratio: 5.3 on fast20240114A (dominant),
+10–19× on the cheaper campaigns — `w_M3 = 5` retained (unit
+granularity only; per-sim results are chunk-invariant).

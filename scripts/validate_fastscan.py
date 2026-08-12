@@ -272,6 +272,65 @@ def main():
             check(f"batch real-window {'M3' if paired else 'M2'} "
                   f"(S={len(ts)})", ok)
 
+    print("[7] segmented sweep equivalence (SEG_MODE forced on/off vs "
+          "per-stream scan_scanner_c)")
+    if sk is not None:
+        def batch_equal(ts, win, span, p_min, s_min, taus, label):
+            """batch results under seg forced-on and forced-off must be
+            exactly equal to per-stream scan_scanner_c (which has no
+            segmented path and is validated against the reference)."""
+            for paired in (False, True):
+                kw = dict(paired=paired,
+                          tau_grid=taus if paired else None)
+                singles = [sk.scan_scanner_c(t, win, span, p_min, s_min,
+                                             **kw) for t in ts]
+                for mode in (1, -1, 0):
+                    sk.set_seg_mode(mode)
+                    batch = sk.scan_scanner_batch(ts, win, span, p_min,
+                                                  s_min, **kw)
+                    ok = all(b[0] == c[0] and b[1] == c[1]
+                             for b, c in zip(batch, singles))
+                    check(f"{label} {'M3' if paired else 'M2'} "
+                          f"seg_mode={mode:+d}", ok)
+            sk.set_seg_mode(0)
+
+        # 7a: standard random configs with segmentation FORCED on (the
+        # auto heuristic rarely engages at this scale, so force it).
+        for trial in range(6):
+            win = rand_window(rng, rng.integers(4, 16), rng.uniform(8, 30))
+            span = float(win[1][-1] - win[0][0])
+            S = int(rng.integers(2, 7))
+            ts = [rand_events(rng, win, int(rng.integers(0, 200)))
+                  for _ in range(S)]
+            p_min, s_min = span / 30.0, span / 300.0
+            taus = list(np.geomspace(s_min, span / 20.0, 5))
+            batch_equal(ts, win, span, p_min, s_min, taus,
+                        f"forced trial {trial}")
+
+        # 7b: sparse windows (short sessions over a long span) where the
+        # auto heuristic genuinely engages, small events counts.
+        for trial in range(4):
+            n_ses = int(rng.integers(4, 12))
+            span_t = float(rng.uniform(60, 150))
+            starts = np.sort(rng.uniform(0, span_t, n_ses))
+            durs = rng.uniform(0.02, 0.10, n_ses)
+            a, b = [], []
+            end = -1.0
+            for s0, d0 in zip(starts, durs):
+                s0 = max(s0, end + 0.5)
+                a.append(s0)
+                b.append(s0 + d0)
+                end = s0 + d0
+            win = (np.array(a), np.array(b))
+            span = float(win[1][-1] - win[0][0])
+            S = int(rng.integers(2, 5))
+            ts = [rand_events(rng, win, int(rng.integers(0, 40)))
+                  for _ in range(S)]
+            p_min, s_min = span / 12.0, span / 4000.0
+            taus = list(np.geomspace(s_min, span / 20.0, 5))
+            batch_equal(ts, win, span, p_min, s_min, taus,
+                        f"sparse trial {trial}")
+
     print(f"\n{'ALL PASS' if FAIL == 0 else f'{FAIL} FAILURES'}")
     return 1 if FAIL else 0
 

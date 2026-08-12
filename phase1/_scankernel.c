@@ -28,6 +28,7 @@
  * extended to [0, 2T).
  */
 
+#include <float.h>
 #include <math.h>
 #include <stdlib.h>
 
@@ -129,6 +130,216 @@ static inline int adv_ptr(const double *phi2, int n2, int p, double x) {
     return p;
 }
 
+/* ------------------------------------------------------------------ *
+ * Segmented exact sweep (batched kernel only).
+ *
+ * Between breakpoints -- an interval edge crossing an exposure-polyline
+ * node or any stream's event phase -- every stream's event count is
+ * constant in t0 and the exact in-window exposure is affine in t0. A
+ * whole run of t0 grid points is skipped ONLY when every stream
+ * provably fails the same "e_in >= e_star[n]" prune test the dense walk
+ * applies at each point: the run's minimum endpoint exposure minus a
+ * rigorous rounding guard already meets the threshold, so each skipped
+ * cell is one the dense walk would 'continue' past without touching any
+ * state. Runs that might compete are walked with the dense-path
+ * arithmetic verbatim. Outputs (best, argmax, pruning state) are
+ * therefore bit-identical to the dense paths -- this is a traversal
+ * shortcut, not a change of evaluation.
+ *
+ * Guard: computed e_in at any grid point differs from the affine model
+ * through the run's endpoints by at most a few ulps of the exposure
+ * scale (<= ~24 eps E_max interpolation/summation rounding per
+ * evaluation, plus <= ~24 eps T S_max from position rounding times the
+ * polyline slope). 64 eps (E_max + T S_max) covers both with an
+ * order-of-magnitude margin; cells within the guard of their threshold
+ * simply fall back to the dense walk.
+ *
+ * SEG_MODE: 0 auto (density heuristic), 1 force on, -1 force off --
+ * a pure performance knob; every setting yields identical results
+ * (exercised by scripts/validate_fastscan.py section [7]).
+ * ------------------------------------------------------------------ */
+
+static int SEG_MODE = 0;
+
+void scankernel_set_seg_mode(int m) { SEG_MODE = m; }
+
+/* smallest i in (i_lo, n_t0) whose edge position pos(i) = (double)i*h + u
+ * (+ w if is_hi) satisfies pos > x (strict) or pos >= x; n_t0 if none.
+ * pos(i) is nondecreasing in i (rounding is monotone), so the predicate
+ * is monotone and the guess +/- walk is exact. */
+static long find_cross(long i_lo, long n_t0, double x, int strict,
+                       double h, double u, double w, int is_hi) {
+    double base = x - u - (is_hi ? w : 0.0);
+    double gd = base / h;
+    long g;
+    if (gd <= (double)(i_lo + 1)) g = i_lo + 1;
+    else if (gd >= (double)n_t0) g = n_t0;
+    else g = (long)gd;
+    if (g < i_lo + 1) g = i_lo + 1;
+    if (g > n_t0) g = n_t0;
+    while (g < n_t0) {
+        double p = (double)g * h + u;
+        if (is_hi) p += w;
+        if (strict ? (p > x) : (p >= x)) break;
+        g++;
+    }
+    while (g > i_lo + 1) {
+        double p = (double)(g - 1) * h + u;
+        if (is_hi) p += w;
+        if (strict ? (p > x) : (p >= x)) g--;
+        else break;
+    }
+    return g;
+}
+
+/* One (sigma, tau) sweep over t0 in segmented form. Geometry: n_iv
+ * intervals [t0+u[j], t0+u[j]+w[j]), the same cells as the dense paths.
+ * ev is caller storage for 2*S EvPtr (per interval x stream). */
+static void seg_sweep_multi(const FoldTables *ex, const double *phi2_all,
+                            const long long *phi2_off, int S, double h,
+                            long n_t0, const double *u, const double *w,
+                            int n_iv, double sig, double tau,
+                            const int *n_tot, double e_tot,
+                            const double *pooled, double *best,
+                            double *out_arg, double *e_star_all,
+                            long long estar_stride, double *table_B,
+                            int *improved_out, EvPtr *ev, double guard) {
+    int n_edge = 2 * n_iv;
+    int sg[4] = {0, 0, 0, 0};       /* edge 2j = lo_j, 2j+1 = hi_j */
+    for (int j = 0; j < n_iv; j++)
+        for (int s = 0; s < S; s++)
+            ev[(size_t)j * S + s].lo = ev[(size_t)j * S + s].hi = 0;
+    long i = 0;
+    while (i < n_t0) {
+        double t0 = (double)i * h;
+        double lo_j[2], hi_j[2];
+        for (int j = 0; j < n_iv; j++) {
+            lo_j[j] = t0 + u[j];
+            hi_j[j] = lo_j[j] + w[j];
+            sg[2 * j] = adv_sg(ex, sg[2 * j], lo_j[j]);
+            sg[2 * j + 1] = adv_sg(ex, sg[2 * j + 1], hi_j[j]);
+        }
+        for (int s = 0; s < S; s++) {
+            const double *ph = phi2_all + phi2_off[s];
+            int n2 = (int)(phi2_off[s + 1] - phi2_off[s]);
+            for (int j = 0; j < n_iv; j++) {
+                EvPtr *P = &ev[(size_t)j * S + s];
+                P->lo = adv_ptr(ph, n2, P->lo, lo_j[j]);
+                P->hi = adv_ptr(ph, n2, P->hi, hi_j[j]);
+            }
+        }
+        /* run end: first i' > i where any edge's node segment or any
+         * stream's count changes */
+        long i_end = n_t0;
+        for (int e = 0; e < n_edge; e++) {
+            int j = e >> 1, is_hi = e & 1;
+            if (sg[e] < ex->m2 - 2) {           /* node: pos >= xs2[k+1] */
+                long c = find_cross(i, n_t0, ex->xs2[sg[e] + 1], 0, h,
+                                    u[j], w[j], is_hi);
+                if (c < i_end) i_end = c;
+            }
+            double ev_x = HUGE_VAL;             /* event: pos > phi */
+            for (int s = 0; s < S; s++) {
+                const double *ph = phi2_all + phi2_off[s];
+                int n2 = (int)(phi2_off[s + 1] - phi2_off[s]);
+                const EvPtr *P = &ev[(size_t)j * S + s];
+                int p = is_hi ? P->hi : P->lo;
+                if (p < n2 && ph[p] < ev_x) ev_x = ph[p];
+            }
+            if (ev_x < HUGE_VAL) {
+                long c = find_cross(i, n_t0, ev_x, 1, h, u[j], w[j],
+                                    is_hi);
+                if (c < i_end) i_end = c;
+            }
+        }
+        if (i_end <= i) i_end = i + 1;          /* defensive */
+        /* endpoint exposures, dense-path accumulation order. If every
+         * edge sits in a zero-slope polyline segment, ev_at returns the
+         * node value exactly, so e_in is bitwise CONSTANT over the run:
+         * no rounding guard is needed (this covers the dominant case,
+         * exposure gaps, where e_in == 0 == e_star[0]). */
+        int flat = 1;
+        for (int e = 0; e < n_edge; e++)
+            if (ex->es2[sg[e] + 1] != ex->es2[sg[e]]) { flat = 0; break; }
+        double e_a = 0.0;
+        for (int j = 0; j < n_iv; j++)
+            e_a += ev_at(ex, sg[2 * j + 1], hi_j[j])
+                 - ev_at(ex, sg[2 * j], lo_j[j]);
+        double e_min = e_a;
+        if (!flat && i_end - 1 > i) {
+            double t0b = (double)(i_end - 1) * h;
+            double e_b = 0.0;
+            for (int j = 0; j < n_iv; j++) {
+                double lob = t0b + u[j];
+                double hib = lob + w[j];
+                e_b += ev_at(ex, sg[2 * j + 1], hib)
+                     - ev_at(ex, sg[2 * j], lob);
+            }
+            if (e_b < e_min) e_min = e_b;
+        }
+        double g_eff = flat ? 0.0 : guard;
+        /* certificate: every stream pruned at every point of the run? */
+        int all_pruned = 1;
+        for (int s = 0; s < S; s++) {
+            double n_in = 0.0;
+            for (int j = 0; j < n_iv; j++)
+                n_in += (double)(ev[(size_t)j * S + s].hi
+                                 - ev[(size_t)j * S + s].lo);
+            int ni = (int)(n_in + 0.5);
+            if (!(e_min - g_eff
+                  >= e_star_all[(size_t)s * estar_stride + ni])) {
+                all_pruned = 0;
+                break;
+            }
+        }
+        if (all_pruned) {
+            i = i_end;
+            continue;
+        }
+        /* competitive run: dense walk, verbatim uncached-path body */
+        for (; i < i_end; i++) {
+            double t0w = (double)i * h;
+            double e_in = 0.0;
+            double lo_w[2], hi_w[2];
+            for (int j = 0; j < n_iv; j++) {
+                lo_w[j] = t0w + u[j];
+                hi_w[j] = lo_w[j] + w[j];
+                sg[2 * j] = adv_sg(ex, sg[2 * j], lo_w[j]);
+                sg[2 * j + 1] = adv_sg(ex, sg[2 * j + 1], hi_w[j]);
+                e_in += ev_at(ex, sg[2 * j + 1], hi_w[j])
+                      - ev_at(ex, sg[2 * j], lo_w[j]);
+            }
+            for (int s = 0; s < S; s++) {
+                const double *ph = phi2_all + phi2_off[s];
+                int n2 = (int)(phi2_off[s + 1] - phi2_off[s]);
+                double n_in = 0.0;
+                for (int j = 0; j < n_iv; j++) {
+                    EvPtr *P = &ev[(size_t)j * S + s];
+                    P->lo = adv_ptr(ph, n2, P->lo, lo_w[j]);
+                    P->hi = adv_ptr(ph, n2, P->hi, hi_w[j]);
+                    n_in += (double)(P->hi - P->lo);
+                }
+                int ni = (int)(n_in + 0.5);
+                const double *es = e_star_all + (size_t)s * estar_stride;
+                if (e_in >= es[ni]) continue;
+                double ll = two_bin(n_in, e_in, n_tot[s], e_tot,
+                                    pooled[s]);
+                if (ll > best[s]) {
+                    best[s] = ll;
+                    out_arg[s * 4 + 0] = sig;
+                    out_arg[s * 4 + 1] = tau;
+                    out_arg[s * 4 + 2] = t0w;
+                    out_arg[s * 4 + 3] = ll;
+                    improved_out[s] = 1;
+                    build_table(e_star_all + (size_t)s * estar_stride,
+                                n_tot[s], e_tot, pooled[s], best[s]);
+                    table_B[s] = best[s];
+                }
+            }
+        }
+    }
+}
+
 /* Batched scan of one period T over S streams.
  * phi2_all/phi2_off: stream s's extended phases are
  *   phi2_all[phi2_off[s] .. phi2_off[s+1]).
@@ -147,6 +358,18 @@ int scan_period_multi(const double *phi2_all, const long long *phi2_off,
                       int *improved_out) {
     FoldTables ex = {NULL, 0, xs2, es2, m2};   /* exposure side only */
     int n_improved = 0;
+    /* segmented-sweep guard and density inputs (see seg_sweep_multi) */
+    double slope_max = 0.0;
+    for (int k = 0; k < m2 - 1; k++) {
+        double dx = xs2[k + 1] - xs2[k];
+        if (dx > 0.0) {
+            double sl = (es2[k + 1] - es2[k]) / dx;
+            if (sl > slope_max) slope_max = sl;
+        }
+    }
+    double seg_guard = 64.0 * DBL_EPSILON
+                       * (es2[m2 - 1] + T * slope_max);
+    double total_n2 = (double)phi2_off[S];
     for (int s = 0; s < S; s++) {
         improved_out[s] = 0;
         if (table_B[s] < best[s]) {
@@ -197,6 +420,39 @@ int scan_period_multi(const double *phi2_all, const long long *phi2_off,
         }
 
         double s1 = sig < T ? sig : T;
+
+        /* Segmented sweep when the t0 grid is much denser than the
+         * breakpoint set (sparse-campaign octaves). Pure performance
+         * choice: results are bit-identical on every path. */
+        int use_seg = SEG_MODE > 0
+            || (SEG_MODE == 0
+                && (double)n_t0 >= 8.0 * ((double)m2 + total_n2));
+        if (use_seg) {
+            for (int it = 0; it < n_tau; it++) {
+                double tau = taus_local[it];
+                double u[2], w[2];
+                int n_iv;
+                if (mode == 0) {
+                    n_iv = 1; u[0] = 0.0; w[0] = s1;
+                } else if (tau < s1) {
+                    double v2 = tau + sig < T ? tau + sig : T;
+                    double top = v2 > s1 ? v2 : s1;
+                    n_iv = 1; u[0] = 0.0; w[0] = top;
+                } else {
+                    n_iv = 2;
+                    u[0] = 0.0; w[0] = s1;
+                    u[1] = tau;
+                    w[1] = (tau + sig < T ? tau + sig : T) - tau;
+                }
+                seg_sweep_multi(&ex, phi2_all, phi2_off, S, h, n_t0,
+                                u, w, n_iv, sig, tau, n_tot, e_tot,
+                                pooled, best, out_arg, e_star_all,
+                                estar_stride, table_B, improved_out,
+                                ev, seg_guard);
+            }
+            continue;
+        }
+
         int use_cache = 0;
         if (base_e && n_t0 <= cache_len) {
             for (int it = 0; it < n_tau; it++)

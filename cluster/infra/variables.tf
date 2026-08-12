@@ -38,8 +38,8 @@ variable "instance_type" {
   default     = "cpx62"
 }
 
-variable "instance_count" {
-  type        = number
-  description = "Number of instances to create"
-  default     = 1
+variable "host_ids" {
+  type        = list(string)
+  description = "Ids of workers to keep alive. Managed by cluster/run.py via hosts.auto.tfvars.json; do not set in terraform.tfvars."
+  default     = []
 }

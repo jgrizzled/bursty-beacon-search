@@ -1,8 +1,9 @@
 # Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
+# Fleet size is NOT set here: cluster/run.py --hosts N manages the
+# worker set in hosts.auto.tfvars.json (also gitignored).
 hcloud_token    = "YOUR-HCLOUD-API-TOKEN"
 ssh_public_key  = "ssh-ed25519 AAAA... you@host"
 ssh_allowed_ips = ["YOUR.IP.ADDR.HERE/32"]
 location        = "hil"
 instance_type   = "cpx62"
-instance_count  = 30
 ssh_port        = 50022

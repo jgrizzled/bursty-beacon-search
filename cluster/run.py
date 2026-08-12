@@ -2,32 +2,60 @@
 """Run the Section 6.2 calibration for one null family on a Hetzner
 cpx62 fleet (execution spec: phase1/CALIBRATION_PLAN.md).
 
-Flow:
-  1. terraform apply (idempotent -- existing servers are reused)
-  2. wait for cloud-init on every host
-  3. push the current git HEAD to every host; uv sync; build the scan
-     kernel; run scripts/validate_fastscan.py -- the host may not compute
-     units unless its own build prints ALL PASS (output collected)
-  4. start each host's shard as a detached systemd unit:
-     calibration.py run --family F --sims lo-hi --workers W --batch B
-  5. poll shard status files, reporting crashes and progress
-  6. download summaries + unit checkpoints + validation outputs, collate
-     (calibration.py collate), terraform destroy
+Work model: the sim range is cut into batches of --batch sims (the
+kernel's stream batch); batches form a queue. Each host runs one batch
+at a time as a detached systemd unit and pulls the next when done, so
+fast hosts do more and throttled hosts do less. The fleet only ever
+shrinks: it is created no larger than the number of pending batches,
+idle hosts are destroyed the moment the queue is empty, and dead hosts
+are reaped -- nobody sits idle on the meter waiting for stragglers.
 
-Resumable at every stage: terraform state tracks servers; a host's unit
-checkpoint resumes its shard; downloaded per-host results under state/
-mark shards complete. Ctrl-C and rerun at any point. Shard results are
-deterministic functions of (family, sim), so re-running a shard anywhere
-(including locally) reproduces it exactly.
+Flow:
+  1. terraform apply for min(--hosts, pending batches) workers
+     (hosts.auto.tfvars.json holds the id set; removing an id destroys
+     exactly that VM)
+  2. wait for cloud-init; push the current git HEAD; uv sync; build the
+     scan kernel; run scripts/validate_fastscan.py -- a host may not
+     compute units unless its own build prints ALL PASS (output
+     collected per batch)
+  3. dispatch loop: assign batches to idle hosts, poll status files,
+     download finished batches, retire idle/dead hosts
+
+Failure handling (all automatic):
+  - unit died but host reachable (crash, OOM, reboot): restart the unit;
+    it resumes from its on-host unit checkpoint (up to MAX_RESTARTS,
+    then the host is retired and the batch requeued)
+  - host unreachable past UNREACHABLE_LIMIT polls: batch requeued,
+    VM destroyed (--keep-failed leaves it up for inspection)
+  - a requeued batch with no idle host left spawns a fresh replacement
+    VM (bounded by --hosts and a finite replacement budget), so a late
+    failure never needs an operator rerun and no host idles as a spare
+  - unit checkpoints are pulled to state/ckpt/ every CKPT_PULL_EVERY
+    polls, and a requeued batch is seeded with its staged checkpoint on
+    the next host, so work survives even a permanently dead VM
+  - a batch that fails on BATCH_ATTEMPTS_MAX hosts aborts the run
+    (systematic problem, not host weather)
+
+Resumable at every stage: terraform state tracks servers,
+state/assignments.json remembers what each host is running, downloaded
+batches are skipped, and shards resume from checkpoints. Ctrl-C and
+rerun at any point. Batch results are deterministic functions of
+(family, sim), so re-running a batch anywhere (including locally)
+reproduces it exactly; duplicate computation is at worst wasted money,
+never wrong data.
+
+Sizing note: 1,000 sims at --batch 16 is 63 batches, so more than 63
+hosts cannot be fed; use --batch 8 (125 batches) for larger fleets --
+measured per-sim kernel cost is within ~8% of batch 16 on the dominant
+campaign and cheaper on the sparse ones.
 
 Usage:
-  python3 cluster/run.py --family M4 --sims 0-1000
+  python3 cluster/run.py --family M4 --sims 0-1000 --hosts 30
 """
 
 import argparse
 import json
 import os
-import re
 import subprocess
 import sys
 import time
@@ -38,6 +66,8 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 INFRA_DIR = HERE / "infra"
 STATE_DIR = HERE / "state"
+FLEET_FILE = INFRA_DIR / "hosts.auto.tfvars.json"
+ASSIGN_FILE = STATE_DIR / "assignments.json"
 
 SSH_USER = "admin"
 REMOTE_BARE = "/home/admin/app.git"
@@ -49,8 +79,11 @@ UNIT = "calib-shard"
 POLL_SECONDS = 30
 CLOUD_INIT_TIMEOUT = 1200
 SETUP_TIMEOUT = 3600            # uv sync + kernel build + validation
-UNREACHABLE_LIMIT = 40
-MISSING_LIMIT = 3
+UNREACHABLE_LIMIT = 40          # polls (~20 min) before a host is dead
+MISSING_LIMIT = 3               # polls with no unit + no status
+MAX_RESTARTS = 3                # unit restarts per (host, batch)
+BATCH_ATTEMPTS_MAX = 3          # distinct hosts per batch before abort
+CKPT_PULL_EVERY = 10            # polls between checkpoint pulls
 
 SSH_OPTS = [
     "-o", "BatchMode=yes",
@@ -65,8 +98,16 @@ def log(msg):
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
-def shard_dir(index):
-    return STATE_DIR / "results" / f"host-{index}"
+def batch_key(family, blo, bhi):
+    return f"{family}_{blo}-{bhi}"
+
+
+def batch_dir(family, blo, bhi):
+    return STATE_DIR / "results" / batch_key(family, blo, bhi)
+
+
+def staged_ckpt(family, blo, bhi):
+    return STATE_DIR / "ckpt" / f"units_{batch_key(family, blo, bhi)}.jsonl"
 
 
 # ---------------------------------------------------------------- terraform
@@ -84,11 +125,21 @@ def ensure_init():
         terraform("init", "-input=false")
 
 
-def tf_apply():
+def fleet_ids():
+    if FLEET_FILE.exists():
+        return list(json.loads(FLEET_FILE.read_text())["host_ids"])
+    return []
+
+
+def ensure_fleet(ids):
+    """Converge the fleet to exactly `ids` (destroys removed hosts) and
+    return the host list sorted by index."""
     ensure_init()
+    FLEET_FILE.write_text(json.dumps({"host_ids": sorted(ids, key=int)}))
     terraform("apply", "-auto-approve", "-input=false")
     out = json.loads(terraform("output", "-json", capture=True))
-    return out["hosts"]["value"], out["ssh_port"]["value"]
+    hosts = sorted(out["hosts"]["value"], key=lambda h: h["index"])
+    return hosts, out["ssh_port"]["value"]
 
 
 def maybe_destroy():
@@ -96,15 +147,17 @@ def maybe_destroy():
         return
     ensure_init()
     terraform("destroy", "-auto-approve", "-input=false")
+    if FLEET_FILE.exists():
+        FLEET_FILE.unlink()
 
 
 # ---------------------------------------------------------------------- ssh
 
-def ssh_run(host, port, remote_cmd, check=True, timeout=None):
+def ssh_run(host, port, remote_cmd, check=True, timeout=None, stdin=None):
     cmd = ["ssh", "-p", str(port), *SSH_OPTS,
            f"{SSH_USER}@{host['ipv4']}", remote_cmd]
     return subprocess.run(cmd, check=check, capture_output=True,
-                          text=True, timeout=timeout)
+                          text=True, timeout=timeout, input=stdin)
 
 
 def wait_cloud_init(host, port):
@@ -176,6 +229,8 @@ def setup_host(host, port):
 
 
 def start_job(host, port, family, lo, hi, workers, batch):
+    """(Re)start the shard unit for one batch; the shard resumes from
+    whatever unit checkpoint exists in REMOTE_STATE."""
     inner = (
         f"{REMOTE_UV} run --project {REMOTE_TREE} python "
         f"{REMOTE_TREE}/phase1/calibration.py run --family {family} "
@@ -183,11 +238,26 @@ def start_job(host, port, family, lo, hi, workers, batch):
         f"--state-dir {REMOTE_STATE}")
     ssh_run(
         host, port,
+        f"sudo systemctl stop {UNIT}.service 2>/dev/null; "
         f"sudo systemctl reset-failed {UNIT}.service 2>/dev/null; "
         f"mkdir -p {REMOTE_STATE} && "
         f"sudo systemd-run --quiet --unit={UNIT} --uid={SSH_USER} "
         f"--gid={SSH_USER} --working-directory={REMOTE_TREE} "
         f"--property=Restart=no {inner}")
+
+
+def seed_checkpoint(host, port, family, blo, bhi):
+    """Upload a previously pulled unit checkpoint so a batch reassigned
+    to this host resumes instead of recomputing."""
+    p = staged_ckpt(family, blo, bhi)
+    if not p.exists() or p.stat().st_size == 0:
+        return
+    name = f"units_{batch_key(family, blo, bhi)}.jsonl"
+    ssh_run(host, port,
+            f"mkdir -p {REMOTE_STATE} && cat > {REMOTE_STATE}/{name}",
+            stdin=p.read_text())
+    log(f"[{host['name']}] seeded checkpoint "
+        f"({p.stat().st_size // 1024} KiB) for {batch_key(family, blo, bhi)}")
 
 
 # ----------------------------------------------------------------- monitor
@@ -227,44 +297,72 @@ def probe(host, port, family, lo, hi):
     return {"phase": "missing"}
 
 
-def download_shard(host, port, family, lo, hi):
-    d = shard_dir(host["index"])
-    d.mkdir(parents=True, exist_ok=True)
-    for pat in (f"summaries_{family}_{lo}-{hi}.jsonl",
-                f"units_{family}_{lo}-{hi}.jsonl",
-                f"status_{family}_{lo}-{hi}.json"):
+def pull_checkpoint(host, port, family, blo, bhi):
+    name = f"units_{batch_key(family, blo, bhi)}.jsonl"
+    r = ssh_run(host, port, f"cat {REMOTE_STATE}/{name}", check=False)
+    if r.returncode != 0 or not r.stdout:
+        return
+    p = staged_ckpt(family, blo, bhi)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    if p.exists() and p.stat().st_size >= len(r.stdout):
+        return                       # never regress the staged copy
+    tmp = p.with_suffix(".tmp")
+    tmp.write_text(r.stdout)
+    tmp.rename(p)
+
+
+def download_batch(host, port, family, blo, bhi):
+    """Fetch a finished batch; only complete downloads are accepted."""
+    key = batch_key(family, blo, bhi)
+    d = batch_dir(family, blo, bhi)
+    tmp = d.with_name(d.name + ".tmp")
+    tmp.mkdir(parents=True, exist_ok=True)
+    for pat in (f"summaries_{key}.jsonl", f"units_{key}.jsonl",
+                f"status_{key}.json"):
         r = ssh_run(host, port, f"cat {REMOTE_STATE}/{pat}")
-        (d / pat).write_text(r.stdout)
+        (tmp / pat).write_text(r.stdout)
     r = ssh_run(host, port,
                 f"cat {REMOTE_TREE}/phase1/validation_output_host.txt",
                 check=False)
-    (d / "validation_output_host.txt").write_text(r.stdout)
+    (tmp / "validation_output_host.txt").write_text(r.stdout)
+    (tmp / "computed_by.txt").write_text(f"{host['name']} {host['ipv4']}\n")
+    n = sum(1 for _ in open(tmp / f"summaries_{key}.jsonl"))
+    if n != bhi - blo:
+        raise RuntimeError(
+            f"{host['name']}: batch {key} claims done but summaries have "
+            f"{n}/{bhi - blo} sims")
+    if d.exists():
+        for f in d.iterdir():
+            f.unlink()
+        d.rmdir()
+    tmp.rename(d)
 
 
-def shard_done_locally(index, family, lo, hi):
-    p = shard_dir(index) / f"summaries_{family}_{lo}-{hi}.jsonl"
+def batch_done_locally(family, blo, bhi):
+    p = batch_dir(family, blo, bhi) / \
+        f"summaries_{batch_key(family, blo, bhi)}.jsonl"
     if not p.exists():
         return False
-    n = sum(1 for _ in open(p))
-    return n == hi - lo
+    return sum(1 for _ in open(p)) == bhi - blo
 
 
 # ------------------------------------------------------------ orchestration
 
-def shard_ranges(lo, hi, n_hosts, batch):
-    """Contiguous ranges, sized in multiples of batch (except the last)."""
-    total = hi - lo
-    per = -(-total // n_hosts)
-    per = -(-per // batch) * batch
-    out = []
-    cur = lo
-    for _ in range(n_hosts):
-        nxt = min(cur + per, hi)
-        out.append((cur, nxt))
-        cur = nxt
-        if cur >= hi:
-            break
-    return out
+def make_batches(lo, hi, batch):
+    return [(b, min(b + batch, hi)) for b in range(lo, hi, batch)]
+
+
+def load_assignments():
+    if ASSIGN_FILE.exists():
+        return {k: tuple(v) for k, v in
+                json.loads(ASSIGN_FILE.read_text()).items()}
+    return {}
+
+
+def save_assignments(assign):
+    ASSIGN_FILE.parent.mkdir(parents=True, exist_ok=True)
+    ASSIGN_FILE.write_text(json.dumps(
+        {k: list(v) for k, v in assign.items()}))
 
 
 def main():
@@ -274,9 +372,18 @@ def main():
     ap.add_argument("--sims", default="0-1000",
                     help="half-open sim index range LO-HI (default 0-1000, "
                          "the frozen stage-1 budget)")
+    ap.add_argument("--hosts", type=int, default=30,
+                    help="fleet size cap; the fleet is never larger than "
+                         "the number of pending batches")
     ap.add_argument("--workers", type=int, default=16)
-    ap.add_argument("--batch", type=int, default=16)
-    ap.add_argument("--keep-infra", action="store_true")
+    ap.add_argument("--batch", type=int, default=16,
+                    help="sims per batch = per work unit (kernel stream "
+                         "batch); 8 feeds fleets larger than 63 hosts")
+    ap.add_argument("--keep-infra", action="store_true",
+                    help="skip the final terraform destroy")
+    ap.add_argument("--keep-failed", action="store_true",
+                    help="leave dead hosts up for inspection instead of "
+                         "destroying them")
     args = ap.parse_args()
     lo, hi = (int(x) for x in args.sims.split("-"))
 
@@ -286,89 +393,231 @@ def main():
         log("note: uncommitted changes present; hosts receive HEAD, "
             "not the working tree")
 
-    log("Applying terraform...")
-    hosts, port = tf_apply()
-    log(f"{len(hosts)} host(s): "
-        + ", ".join(f"{h['name']}={h['ipv4']}" for h in hosts))
-    ranges = shard_ranges(lo, hi, len(hosts), args.batch)
-    hosts = hosts[:len(ranges)]
-    for h, (slo, shi) in zip(hosts, ranges):
-        h["lo"], h["hi"] = slo, shi
-        log(f"  {h['name']}: sims {slo}..{shi - 1}")
+    batches = make_batches(lo, hi, args.batch)
+    queue = [b for b in batches
+             if not batch_done_locally(args.family, *b)]
+    log(f"{len(batches)} batches of <={args.batch} sims, "
+        f"{len(queue)} pending")
+    if args.hosts > len(batches):
+        log(f"note: --hosts {args.hosts} > {len(batches)} batches; a "
+            f"smaller --batch would let more hosts contribute")
+
+    # Fleet: keep hosts whose recorded assignment is still pending (they
+    # hold checkpoints), then fill up to the cap with fresh ids.
+    assign = load_assignments()          # host id -> (blo, bhi)
+    assign = {k: v for k, v in assign.items()
+              if tuple(v) in {tuple(b) for b in queue}}
+    n_target = min(args.hosts, len(queue))
+    ids = sorted(assign, key=int)[:n_target]
+    nxt = 0
+    while len(ids) < n_target:
+        if str(nxt) not in ids:
+            ids.append(str(nxt))
+        nxt += 1
+    if not queue:
+        hosts = []
+    else:
+        log(f"Applying terraform for {len(ids)} host(s)...")
+        hosts, port = ensure_fleet(ids)
+        log(", ".join(f"{h['name']}={h['ipv4']}" for h in hosts))
+
+    # Per-host runtime state: 'batch' (or None), strike/restart counters.
+    for h in hosts:
+        hid = str(h["index"])
+        h["id"] = hid
+        h["batch"] = assign.get(hid)
+        h["strikes"] = 0
+        h["restarts"] = 0
+        h["alive"] = True
+    if any(h["batch"] for h in hosts):
+        for h in hosts:
+            if h["batch"]:
+                log(f"  {h['name']}: resuming batch "
+                    f"{batch_key(args.family, *h['batch'])}")
+    queued = [b for b in queue
+              if tuple(b) not in {tuple(h["batch"]) for h in hosts
+                                  if h["batch"]}]
+    attempts = {tuple(b): 0 for b in queue}
 
     def prepare(host):
-        i = host["index"]
-        if shard_done_locally(i, args.family, host["lo"], host["hi"]):
-            log(f"[{host['name']}] shard already downloaded, skipping")
-            return
-        log(f"[{host['name']}] waiting for cloud-init...")
-        wait_cloud_init(host, port)
-        push_code(host, port)
-        setup_host(host, port)
-        st = probe(host, port, args.family, host["lo"], host["hi"])
-        if st["phase"] == "done":
-            log(f"[{host['name']}] shard already finished on host")
-        elif st["phase"] == "running":
-            log(f"[{host['name']}] shard already running, resuming watch")
-        else:
-            start_job(host, port, args.family, host["lo"], host["hi"],
-                      args.workers, args.batch)
-            log(f"[{host['name']}] started sims "
-                f"{host['lo']}..{host['hi'] - 1}")
+        try:
+            log(f"[{host['name']}] waiting for cloud-init...")
+            wait_cloud_init(host, port)
+            push_code(host, port)
+            setup_host(host, port)
+        except Exception as e:            # dead on arrival: reap below
+            log(f"[{host['name']}] setup FAILED: {e}")
+            host["alive"] = False
 
-    with ThreadPoolExecutor(max_workers=min(16, len(hosts))) as pool:
-        list(pool.map(prepare, hosts))
+    if hosts:
+        with ThreadPoolExecutor(max_workers=min(16, len(hosts))) as pool:
+            list(pool.map(prepare, hosts))
 
-    terminal = {}
-    strikes = {h["index"]: 0 for h in hosts}
-    while len(terminal) < len(hosts):
-        for host in hosts:
-            i = host["index"]
-            if i in terminal:
+    kept_failed = []                      # ids kept up via --keep-failed
+    replacements_left = 2 * max(args.hosts, 1)
+    next_id = max([int(h["id"]) for h in hosts], default=-1) + 1
+    polls = 0
+
+    def requeue(host, reason):
+        b = host["batch"]
+        host["batch"] = None
+        host["alive"] = False
+        if b:
+            attempts[tuple(b)] += 1
+            if attempts[tuple(b)] >= BATCH_ATTEMPTS_MAX:
+                raise RuntimeError(
+                    f"batch {batch_key(args.family, *b)} failed on "
+                    f"{BATCH_ATTEMPTS_MAX} hosts; aborting (systematic "
+                    f"failure, not host weather)")
+            queued.insert(0, b)
+        log(f"[{host['name']}] {reason}; "
+            + (f"requeued {batch_key(args.family, *b)}" if b else
+               "no batch assigned"))
+
+    while True:
+        # -------- dispatch: idle live hosts pull from the queue
+        for h in hosts:
+            if h["alive"] and h["batch"] is None and queued:
+                b = queued.pop(0)
+                try:
+                    seed_checkpoint(h, port, args.family, *b)
+                    start_job(h, port, args.family, b[0], b[1],
+                              args.workers, args.batch)
+                except subprocess.CalledProcessError as e:
+                    queued.insert(0, b)
+                    h["strikes"] += 1
+                    log(f"[{h['name']}] dispatch failed "
+                        f"({str(e)[:120]}); will retry")
+                    continue
+                h["batch"] = b
+                h["restarts"] = 0
+                h["strikes"] = 0
+                log(f"[{h['name']}] started "
+                    f"{batch_key(args.family, *b)}")
+        save_assignments({h["id"]: h["batch"] for h in hosts
+                          if h["alive"] and h["batch"]})
+
+        # -------- retire: idle hosts with nothing to do, and dead hosts
+        for h in hosts:                  # e.g. setup failed mid-resume
+            if not h["alive"] and h["batch"]:
+                requeue(h, "host died holding a batch")
+        drop = [h for h in hosts
+                if (not h["alive"]) or (h["batch"] is None and not queued)]
+        if drop:
+            for h in drop:
+                if not h["alive"] and args.keep_failed:
+                    kept_failed.append(h["id"])
+                    log(f"[{h['name']}] dead; kept up (--keep-failed)")
+                else:
+                    log(f"[{h['name']}] "
+                        + ("dead; destroying"
+                           if not h["alive"] else "idle; destroying"))
+            hosts = [h for h in hosts if h not in drop]
+            keep = [h["id"] for h in hosts] + kept_failed
+            if keep:
+                ensure_fleet(keep)
+            else:
+                maybe_destroy()
+
+        # -------- replace: requeued work with nobody idle gets a fresh VM
+        if queued:
+            idle = sum(1 for h in hosts
+                       if h["alive"] and h["batch"] is None)
+            need = min(len(queued) - idle, args.hosts - len(hosts),
+                       replacements_left)
+            if need > 0:
+                new_ids = [str(next_id + k) for k in range(need)]
+                next_id += need
+                replacements_left -= need
+                log(f"spawning {need} replacement host(s): "
+                    + ", ".join(new_ids))
+                all_hosts, port = ensure_fleet(
+                    [h["id"] for h in hosts] + kept_failed + new_ids)
+                fresh = [dict(h, id=str(h["index"]), batch=None,
+                              strikes=0, restarts=0, alive=True)
+                         for h in all_hosts
+                         if str(h["index"]) in new_ids]
+                with ThreadPoolExecutor(
+                        max_workers=min(16, len(fresh))) as pool:
+                    list(pool.map(prepare, fresh))
+                hosts.extend(fresh)
+
+        if not hosts:
+            if queued:
+                raise RuntimeError(
+                    f"{len(queued)} batches pending, no live hosts, and "
+                    f"the replacement budget is exhausted; rerun to "
+                    f"retry with a fresh fleet")
+            break
+
+        time.sleep(POLL_SECONDS)
+        polls += 1
+
+        # -------- poll running hosts
+        for h in hosts:
+            if not (h["alive"] and h["batch"]):
                 continue
-            if shard_done_locally(i, args.family, host["lo"], host["hi"]):
-                terminal[i] = "done"
-                continue
-            st = probe(host, port, args.family, host["lo"], host["hi"])
+            b = h["batch"]
+            st = probe(h, port, args.family, b[0], b[1])
             if st["phase"] == "done":
-                download_shard(host, port, args.family, host["lo"],
-                               host["hi"])
-                log(f"[{host['name']}] shard done, downloaded")
-                terminal[i] = "done"
-            elif st["phase"] == "failed":
-                log(f"[{host['name']}] FAILED: {st['detail']}")
-                terminal[i] = "failed"
+                try:
+                    download_batch(h, port, args.family, b[0], b[1])
+                except (subprocess.CalledProcessError, RuntimeError,
+                        OSError) as e:
+                    h["strikes"] += 1
+                    log(f"[{h['name']}] download failed ({e}); retrying")
+                    if h["strikes"] >= UNREACHABLE_LIMIT:
+                        requeue(h, "download kept failing")
+                    continue
+                log(f"[{h['name']}] {batch_key(args.family, *b)} done, "
+                    f"downloaded ({len(queued)} queued)")
+                staged_ckpt(args.family, *b).unlink(missing_ok=True)
+                h["batch"] = None
+                h["strikes"] = 0
             elif st["phase"] == "running":
-                strikes[i] = 0
+                h["strikes"] = 0
                 s = st.get("status") or {}
                 if s.get("units_total"):
-                    log(f"[{host['name']}] {s.get('units_done', 0)}/"
-                        f"{s['units_total']} units "
-                        f"({s.get('elapsed_s', 0) / 3600:.1f} h)")
-                else:
-                    log(f"[{host['name']}] running (starting up)")
+                    log(f"[{h['name']}] {batch_key(args.family, *b)}: "
+                        f"{s.get('units_done', 0)}/{s['units_total']} "
+                        f"units ({s.get('elapsed_s', 0) / 3600:.1f} h)")
+                if polls % CKPT_PULL_EVERY == 0:
+                    pull_checkpoint(h, port, args.family, b[0], b[1])
+            elif st["phase"] in ("failed", "missing"):
+                h["strikes"] += 1
+                if st["phase"] == "failed" or h["strikes"] >= MISSING_LIMIT:
+                    if h["restarts"] < MAX_RESTARTS:
+                        h["restarts"] += 1
+                        h["strikes"] = 0
+                        log(f"[{h['name']}] unit died "
+                            f"({st.get('detail', 'no status')}); restart "
+                            f"{h['restarts']}/{MAX_RESTARTS} (resumes "
+                            f"from checkpoint)")
+                        try:
+                            start_job(h, port, args.family, b[0], b[1],
+                                      args.workers, args.batch)
+                        except subprocess.CalledProcessError:
+                            requeue(h, "restart failed")
+                    else:
+                        pull_checkpoint(h, port, args.family, b[0], b[1])
+                        requeue(h, "unit kept dying")
             elif st["phase"] == "unreachable":
-                strikes[i] += 1
-                if strikes[i] >= UNREACHABLE_LIMIT:
-                    terminal[i] = "failed"
-                    log(f"[{host['name']}] FAILED: unreachable")
-            else:
-                strikes[i] += 1
-                if strikes[i] >= MISSING_LIMIT:
-                    terminal[i] = "failed"
-                    log(f"[{host['name']}] FAILED: no unit and no status")
-        if len(terminal) < len(hosts):
-            time.sleep(POLL_SECONDS)
+                h["strikes"] += 1
+                if h["strikes"] % 10 == 0:
+                    log(f"[{h['name']}] unreachable "
+                        f"({h['strikes']}/{UNREACHABLE_LIMIT})")
+                if h["strikes"] >= UNREACHABLE_LIMIT:
+                    requeue(h, "unreachable too long")
 
-    failed = sorted(i for i, ph in terminal.items() if ph != "done")
-    if failed:
-        log(f"Shards failed on hosts {failed}. Leaving servers up; rerun "
-            f"to resume, or destroy with: "
-            f"terraform -chdir={INFRA_DIR} destroy")
+    missing = [b for b in batches
+               if not batch_done_locally(args.family, *b)]
+    if missing:
+        log(f"{len(missing)} batches incomplete; rerun to finish: "
+            + ", ".join(batch_key(args.family, *b) for b in missing[:5]))
         sys.exit(1)
 
-    log("All shards done; collating...")
-    dirs = ",".join(str(shard_dir(h["index"])) for h in hosts)
+    log("All batches done; collating...")
+    dirs = ",".join(str(batch_dir(args.family, *b)) for b in batches)
     subprocess.run(
         ["uv", "run", "python", str(REPO / "phase1" / "calibration.py"),
          "collate", "--state-dirs", dirs,
@@ -376,6 +625,9 @@ def main():
         cwd=REPO, check=True)
     if args.keep_infra:
         log("--keep-infra set, skipping destroy")
+    elif kept_failed:
+        log(f"{len(kept_failed)} failed host(s) kept up for inspection; "
+            f"destroy with: terraform -chdir={INFRA_DIR} destroy")
     else:
         log("Destroying terraform resources...")
         maybe_destroy()

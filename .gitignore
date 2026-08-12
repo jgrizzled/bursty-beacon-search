@@ -18,6 +18,7 @@ phase1/validation_output.txt
 infra/config.auto.tfvars.json
 infra/.terraform/
 infra/*.tfstate*
+hosts.auto.tfvars.json
 phase1/calibration_state/
 phase1/*_smoke.log
 phase1/confirmatory_run.log

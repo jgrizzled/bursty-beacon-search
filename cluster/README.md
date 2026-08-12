@@ -10,32 +10,63 @@ single machine with
 
 ```
 run.py    orchestrator (stdlib only, runs locally)
-infra/    terraform: N x cpx62 + firewall (from hetz-compute template)
-state/    local run state: per-host downloads, collated output (gitignored)
+infra/    terraform: cpx62 workers keyed by id + firewall
+state/    local run state: per-batch downloads, staged checkpoints,
+          assignments, collated output (gitignored)
 ```
+
+## Work model
+
+The sim range is cut into batches of `--batch` sims (the kernel's
+stream batch; 16 sims per batch → 63 batches for the 1,000-sim stage-1
+budget). Batches form a queue; each host runs one batch at a time as a
+detached systemd unit and pulls the next when done. Consequences:
+
+- **Fleet sizing**: the fleet is created no larger than the number of
+  pending batches, so `--hosts 99` with 63 batches provisions 63, not
+  99. To actually feed ~99+ hosts, use `--batch 8` (125 batches);
+  measured per-sim kernel cost is within ~8% of batch 16 on the
+  dominant FAST campaign and *cheaper* on the sparse ones.
+- **No idle spend**: a host whose queue is empty is destroyed
+  immediately (terraform workers are keyed by id, so individual VMs
+  can be removed); throttled stragglers just finish their own batch
+  while everyone else has already been reaped.
+- **Failures are self-healing**: a dead unit on a reachable host is
+  restarted and resumes from its on-host unit checkpoint (this covers
+  reboots); a host unreachable for ~20 min has its batch requeued and
+  the VM destroyed (`--keep-failed` keeps it up for inspection). Unit
+  checkpoints are pulled to `state/ckpt/` every ~5 min, and a requeued
+  batch is seeded with the staged checkpoint on its next host. If a
+  batch requeues with nobody idle, a fresh replacement VM is spawned
+  (bounded by `--hosts` and a finite budget). A batch that fails on 3
+  different hosts aborts the run — that is a bug, not host weather.
+- **Duplicates are harmless**: batch results are deterministic
+  functions of (family, sim), so a zombie host recomputing a batch can
+  waste money but never corrupt data.
 
 ## Prerequisites
 
 - `terraform` and `git` on PATH; python3; `uv` (for the final collate).
 - `infra/terraform.tfvars` — copy `terraform.tfvars.example`; fill in
-  the Hetzner API token, ssh public key, allowed IP, `instance_count`.
+  the Hetzner API token, ssh public key, allowed IP. Fleet size is NOT
+  set here (`run.py --hosts` manages `infra/hosts.auto.tfvars.json`).
 - The matching ssh private key available (ssh-agent or `~/.ssh`).
 - A committed HEAD: hosts receive the last commit, not the working tree.
 
 ## Run (per family, in the CALIBRATION_PLAN order)
 
 ```sh
-python3 cluster/run.py --family M4 --sims 0-1000
+python3 cluster/run.py --family M4 --sims 0-1000 --hosts 30
 ```
 
 Each host: cloud-init → git push of HEAD → `uv sync` → kernel build →
 `validate_fastscan.py` gate (a host that does not print ALL PASS never
-computes units; outputs are downloaded as artifacts) → detached
-systemd shard → unit-checkpointed scanning. Kill/rerun `run.py` freely;
-shards resume from their checkpoints. Failed hosts leave the fleet up
-for inspection; rerun retries them.
+computes units; outputs are downloaded with every batch) → detached
+systemd shard → unit-checkpointed scanning. Kill/rerun `run.py` freely:
+downloaded batches are skipped, `state/assignments.json` reattaches
+running hosts, shards resume from checkpoints.
 
 Collated output: `state/calibration_M4.json` (FAP_F, percentiles,
 frozen stop-rule status). Commit-worthy artifacts after a family
-completes: the collated JSON, per-host `validation_output_host.txt`,
-and the per-host summaries.
+completes: the collated JSON, per-batch `validation_output_host.txt`,
+and the per-batch summaries.

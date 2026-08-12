@@ -49,8 +49,11 @@ resource "hcloud_firewall" "main" {
 }
 
 resource "hcloud_server" "worker" {
-  count        = var.instance_count
-  name         = "${var.name}-${count.index}"
+  # Keyed by id so cluster/run.py can retire individual hosts (idle or
+  # dead) with a plain apply: it maintains host_ids in
+  # hosts.auto.tfvars.json; removing an id destroys exactly that VM.
+  for_each     = toset(var.host_ids)
+  name         = "${var.name}-${each.key}"
   image        = "ubuntu-26.04"
   server_type  = var.instance_type
   location     = var.location
@@ -108,8 +111,8 @@ provider "hcloud" {
 output "hosts" {
   description = "Hosts"
   value = [
-    for index, server in hcloud_server.worker : {
-      index = index
+    for id, server in hcloud_server.worker : {
+      index = tonumber(id)
       name  = server.name
       ipv4  = server.ipv4_address
     }

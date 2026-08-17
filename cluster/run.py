@@ -14,12 +14,14 @@ Flow:
   1. terraform apply for min(--hosts, pending batches) workers
      (hosts.auto.tfvars.json holds the id set; removing an id destroys
      exactly that VM)
-  2. wait for cloud-init; push the current git HEAD; uv sync; build the
-     scan kernel; run scripts/validate_fastscan.py -- a host may not
-     compute units unless its own build prints ALL PASS (output
-     collected per batch)
-  3. dispatch loop: assign batches to idle hosts, poll status files,
-     download finished batches, retire idle/dead hosts
+  2. per host, in background threads (SETUP_PARALLEL wide): wait for
+     cloud-init; push the current git HEAD; uv sync; build the scan
+     kernel; run scripts/validate_fastscan.py -- a host may not compute
+     units unless its own build prints ALL PASS (output collected per
+     batch). A host is dispatched the moment its OWN gate passes; there
+     is no fleet-wide setup barrier.
+  3. dispatch loop: assign batches to idle ready hosts, poll status
+     files, download finished batches, retire idle/dead hosts
 
 Failure handling (all automatic):
   - unit died but host reachable (crash, OOM, reboot): restart the unit;
@@ -47,7 +49,11 @@ never wrong data.
 Sizing note: 1,000 sims at --batch 16 is 63 batches, so more than 63
 hosts cannot be fed; use --batch 8 (125 batches) for larger fleets --
 measured per-sim kernel cost is within ~8% of batch 16 on the dominant
-campaign and cheaper on the sparse ones.
+campaign and cheaper on the sparse ones. Prefer a host count that
+divides the batch count evenly (e.g. 125 hosts for one wave, 63 for
+two): M4 ran 125 batches on 99 hosts and spent 3 extra wall-days on a
+26-batch second wave. Total cost is wave-shape-invariant; wall time is
+not.
 
 Usage:
   python3 cluster/run.py --family M4 --sims 0-1000 --hosts 30
@@ -58,6 +64,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -100,6 +107,7 @@ SSH_OPTS = [
 ]
 SSH_TIMEOUT = 300               # hard cap on any single ssh command
 PROBE_PARALLEL = 16             # concurrent per-host polls
+SETUP_PARALLEL = 16             # concurrent host setups (git push + build)
 
 
 def log(msg):
@@ -467,6 +475,7 @@ def main():
         h["strikes"] = 0
         h["restarts"] = 0
         h["alive"] = True
+        h["ready"] = False
     if any(h["batch"] for h in hosts):
         for h in hosts:
             if h["batch"]:
@@ -487,9 +496,23 @@ def main():
             log(f"[{host['name']}] setup FAILED: {e}")
             host["alive"] = False
 
-    if hosts:
-        with ThreadPoolExecutor(max_workers=min(16, len(hosts))) as pool:
-            list(pool.map(prepare, hosts))
+    # Setup runs in background threads and each host is dispatched (or,
+    # for a resumed batch, polled) as soon as its OWN gate passes -- no
+    # fleet-wide barrier. At 99 hosts a barrier left the whole fleet
+    # idle ~45 min behind the slowest setup. Daemon threads so an abort
+    # never blocks process exit on an in-flight setup.
+    prep_sem = threading.Semaphore(SETUP_PARALLEL)
+
+    def prepare_async(host):
+        with prep_sem:
+            if host["alive"]:
+                prepare(host)
+                if host["alive"]:
+                    host["ready"] = True
+
+    for h in hosts:
+        threading.Thread(target=prepare_async, args=(h,),
+                         daemon=True).start()
 
     kept_failed = []                      # ids kept up via --keep-failed
     replacements_left = 2 * max(args.hosts, 1)
@@ -516,7 +539,7 @@ def main():
     while True:
         # -------- dispatch: idle live hosts pull from the queue
         for h in hosts:
-            if h["alive"] and h["batch"] is None and queued:
+            if h["alive"] and h["ready"] and h["batch"] is None and queued:
                 b = queued.pop(0)
                 try:
                     seed_checkpoint(h, port, args.family, *b)
@@ -573,12 +596,13 @@ def main():
                 all_hosts, port = ensure_fleet(
                     [h["id"] for h in hosts] + kept_failed + new_ids)
                 fresh = [dict(h, id=str(h["index"]), batch=None,
-                              strikes=0, restarts=0, alive=True)
+                              strikes=0, restarts=0, alive=True,
+                              ready=False)
                          for h in all_hosts
                          if str(h["index"]) in new_ids]
-                with ThreadPoolExecutor(
-                        max_workers=min(16, len(fresh))) as pool:
-                    list(pool.map(prepare, fresh))
+                for h in fresh:
+                    threading.Thread(target=prepare_async, args=(h,),
+                                     daemon=True).start()
                 hosts.extend(fresh)
 
         if not hosts:
@@ -595,7 +619,11 @@ def main():
         # -------- poll running hosts (concurrently: a serial cycle over
         # a large fleet costs minutes and lets one slow host delay
         # everyone's dispatch)
-        active = [h for h in hosts if h["alive"] and h["batch"]]
+        # Not-yet-ready hosts are excluded even when resuming a batch:
+        # their shard keeps running on-host regardless, and polling one
+        # mid-setup could race a unit restart against a kernel rebuild.
+        active = [h for h in hosts
+                  if h["alive"] and h["ready"] and h["batch"]]
         if active:
             with ThreadPoolExecutor(
                     max_workers=min(PROBE_PARALLEL, len(active))) as pool:

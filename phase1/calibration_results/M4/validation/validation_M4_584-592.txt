@@ -1,0 +1,136 @@
+[1] primitive equivalence (exposure + counts)
+  PASS  60 random (window, T, sigma, tau) templates 
+[2] M2 scan equivalence (random configs)
+  PASS  M2 trial 0 ref=939.824686 fast=939.824686
+  PASS  M2 trial 1 ref=779.579359 fast=779.579359
+  PASS  M2 trial 2 ref=397.430373 fast=397.430373
+  PASS  M2 trial 3 ref=58.375410 fast=58.375410
+  PASS  M2 trial 4 ref=47.749812 fast=47.749812
+  PASS  M2 trial 5 ref=259.673047 fast=259.673047
+  PASS  M2 trial 6 ref=802.311351 fast=802.311351
+  PASS  M2 trial 7 ref=6.316825 fast=6.316825
+  PASS  M2 trial 8 ref=315.143556 fast=315.143556
+  PASS  M2 trial 9 ref=444.344616 fast=444.344616
+  PASS  M2 trial 10 ref=37.666332 fast=37.666332
+  PASS  M2 trial 11 ref=503.202912 fast=503.202912
+[3] M3 scan equivalence
+  PASS  M3 trial 0 ref=85.581772 fast=85.581772 cells=37982
+  PASS  M3 trial 1 ref=311.550862 fast=311.550862 cells=37982
+  PASS  M3 trial 2 ref=853.505406 fast=853.505406 cells=38062
+  PASS  M3 trial 3 ref=362.310057 fast=362.310057 cells=37994
+  PASS  M3 trial 4 ref=229.083439 fast=229.083439 cells=38032
+  PASS  M3 trial 5 ref=961.259476 fast=961.259476 cells=38044
+  PASS  M3 trial 6 ref=734.168977 fast=734.168977 cells=38062
+  PASS  M3 trial 7 ref=492.514517 fast=492.514517 cells=38012
+[4] Lambda equivalence on real sepoct window (smoke config)
+  PASS  Lambda M0 ref=-2.925081 fast=-2.925081 (7.42s -> 1.67s)
+  PASS  Lambda M1 ref=24.962411 fast=24.962411 (7.45s -> 1.63s)
+  PASS  Lambda M4 ref=-1293.236404 fast=-1293.236404 (7.54s -> 1.69s)
+  PASS  Lambda M5 ref=-167.115445 fast=-167.115445 (7.83s -> 1.72s)
+[5] C kernel equivalence (scankernel vs reference and fastscan)
+  PASS  C M2 trial 0 ref=34.303315 c=34.303315
+  PASS  C M3 trial 0 ref=35.853160 c=35.853160
+  PASS  C M2 trial 1 ref=107.148606 c=107.148606
+  PASS  C M3 trial 1 ref=108.475137 c=108.475137
+  PASS  C M2 trial 2 ref=205.830252 c=205.830252
+  PASS  C M3 trial 2 ref=208.777419 c=208.777419
+  PASS  C M2 trial 3 ref=232.453729 c=232.453729
+  PASS  C M3 trial 3 ref=233.246153 c=233.246153
+  PASS  C M2 trial 4 ref=400.315041 c=400.315041
+  PASS  C M3 trial 4 ref=401.214139 c=401.214139
+  PASS  C M2 trial 5 ref=371.078710 c=371.078710
+  PASS  C M3 trial 5 ref=371.797027 c=371.797027
+  PASS  C M2 trial 6 ref=295.290157 c=295.290157
+  PASS  C M3 trial 6 ref=294.895647 c=294.895647
+  PASS  C M2 trial 7 ref=176.099365 c=176.099365
+  PASS  C M3 trial 7 ref=178.626120 c=178.626120
+  PASS  C M2 trial 8 ref=525.999553 c=525.999553
+  PASS  C M3 trial 8 ref=526.286223 c=526.286223
+  PASS  C M2 trial 9 ref=808.862426 c=808.862426
+  PASS  C M3 trial 9 ref=809.350840 c=809.350840
+  PASS  C Lambda M0 fast=-2.925081 c=-2.925081 (0.81s)
+  PASS  C Lambda M1 fast=24.962411 c=24.962411 (0.82s)
+  PASS  C Lambda M4 fast=-1293.236404 c=-1293.236404 (0.86s)
+  PASS  C Lambda M5 fast=-167.115445 c=-167.115445 (1.00s)
+[6] batched kernel equivalence (scan_scanner_batch vs per-stream scan_scanner_c)
+  PASS  batch M2 trial 0 (S=2) 
+  PASS  batch M3 trial 0 (S=2) 
+  PASS  batch M2 trial 1 (S=3) 
+  PASS  batch M3 trial 1 (S=3) 
+  PASS  batch M2 trial 2 (S=6) 
+  PASS  batch M3 trial 2 (S=6) 
+  PASS  batch M2 trial 3 (S=3) 
+  PASS  batch M3 trial 3 (S=3) 
+  PASS  batch M2 trial 4 (S=5) 
+  PASS  batch M3 trial 4 (S=5) 
+  PASS  batch M2 trial 5 (S=4) 
+  PASS  batch M3 trial 5 (S=4) 
+  PASS  batch M2 trial 6 (S=5) 
+  PASS  batch M3 trial 6 (S=5) 
+  PASS  batch M2 trial 7 (S=5) 
+  PASS  batch M3 trial 7 (S=5) 
+  PASS  batch real-window M2 (S=6) 
+  PASS  batch real-window M3 (S=6) 
+[7] segmented sweep equivalence (SEG_MODE forced on/off vs per-stream scan_scanner_c)
+  PASS  forced trial 0 M2 seg_mode=+1 
+  PASS  forced trial 0 M2 seg_mode=-1 
+  PASS  forced trial 0 M2 seg_mode=+0 
+  PASS  forced trial 0 M3 seg_mode=+1 
+  PASS  forced trial 0 M3 seg_mode=-1 
+  PASS  forced trial 0 M3 seg_mode=+0 
+  PASS  forced trial 1 M2 seg_mode=+1 
+  PASS  forced trial 1 M2 seg_mode=-1 
+  PASS  forced trial 1 M2 seg_mode=+0 
+  PASS  forced trial 1 M3 seg_mode=+1 
+  PASS  forced trial 1 M3 seg_mode=-1 
+  PASS  forced trial 1 M3 seg_mode=+0 
+  PASS  forced trial 2 M2 seg_mode=+1 
+  PASS  forced trial 2 M2 seg_mode=-1 
+  PASS  forced trial 2 M2 seg_mode=+0 
+  PASS  forced trial 2 M3 seg_mode=+1 
+  PASS  forced trial 2 M3 seg_mode=-1 
+  PASS  forced trial 2 M3 seg_mode=+0 
+  PASS  forced trial 3 M2 seg_mode=+1 
+  PASS  forced trial 3 M2 seg_mode=-1 
+  PASS  forced trial 3 M2 seg_mode=+0 
+  PASS  forced trial 3 M3 seg_mode=+1 
+  PASS  forced trial 3 M3 seg_mode=-1 
+  PASS  forced trial 3 M3 seg_mode=+0 
+  PASS  forced trial 4 M2 seg_mode=+1 
+  PASS  forced trial 4 M2 seg_mode=-1 
+  PASS  forced trial 4 M2 seg_mode=+0 
+  PASS  forced trial 4 M3 seg_mode=+1 
+  PASS  forced trial 4 M3 seg_mode=-1 
+  PASS  forced trial 4 M3 seg_mode=+0 
+  PASS  forced trial 5 M2 seg_mode=+1 
+  PASS  forced trial 5 M2 seg_mode=-1 
+  PASS  forced trial 5 M2 seg_mode=+0 
+  PASS  forced trial 5 M3 seg_mode=+1 
+  PASS  forced trial 5 M3 seg_mode=-1 
+  PASS  forced trial 5 M3 seg_mode=+0 
+  PASS  sparse trial 0 M2 seg_mode=+1 
+  PASS  sparse trial 0 M2 seg_mode=-1 
+  PASS  sparse trial 0 M2 seg_mode=+0 
+  PASS  sparse trial 0 M3 seg_mode=+1 
+  PASS  sparse trial 0 M3 seg_mode=-1 
+  PASS  sparse trial 0 M3 seg_mode=+0 
+  PASS  sparse trial 1 M2 seg_mode=+1 
+  PASS  sparse trial 1 M2 seg_mode=-1 
+  PASS  sparse trial 1 M2 seg_mode=+0 
+  PASS  sparse trial 1 M3 seg_mode=+1 
+  PASS  sparse trial 1 M3 seg_mode=-1 
+  PASS  sparse trial 1 M3 seg_mode=+0 
+  PASS  sparse trial 2 M2 seg_mode=+1 
+  PASS  sparse trial 2 M2 seg_mode=-1 
+  PASS  sparse trial 2 M2 seg_mode=+0 
+  PASS  sparse trial 2 M3 seg_mode=+1 
+  PASS  sparse trial 2 M3 seg_mode=-1 
+  PASS  sparse trial 2 M3 seg_mode=+0 
+  PASS  sparse trial 3 M2 seg_mode=+1 
+  PASS  sparse trial 3 M2 seg_mode=-1 
+  PASS  sparse trial 3 M2 seg_mode=+0 
+  PASS  sparse trial 3 M3 seg_mode=+1 
+  PASS  sparse trial 3 M3 seg_mode=-1 
+  PASS  sparse trial 3 M3 seg_mode=+0 
+
+ALL PASS

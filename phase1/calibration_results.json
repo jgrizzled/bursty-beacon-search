@@ -1,0 +1,22 @@
+{
+ "generated_utc": "2026-08-17T16:12:19+00:00",
+ "lambda_star": 86.78456251617922,
+ "prereg": "prereg_h1.md Section 6.2 (conservative-maximum rule; staged budget)",
+ "families": {
+  "M4": {
+   "n_sims": 1000,
+   "n_ge_lambda_star": 0,
+   "fap": 0.0,
+   "percentiles": {
+    "50": -19.293629227923816,
+    "90": 12.157339118762877,
+    "99": 26.889322746327164,
+    "99.9": 35.925887287558034
+   },
+   "stage1_complete": true,
+   "stop_rule_triggered": false
+  }
+ },
+ "fap_conservative_max": 0.0,
+ "stop_rule": "not triggered on completed families"
+}
